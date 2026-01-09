@@ -1,0 +1,50 @@
+﻿<h2>Crear Slide</h2>
+
+<input type="hidden" id="areaId" value="@ViewBag.AreaId">
+
+<div class="card p-4">
+
+    <div class="mb-3">
+        <label>Título</label>
+        <input id="titulo" class="form-control">
+    </div>
+
+    <div class="mb-3">
+        <label>Orden</label>
+        <input id="orden" type="number" class="form-control">
+    </div>
+
+    <div class="form-check mb-3">
+        <input id="activo" type="checkbox" class="form-check-input" checked>
+        <label class="form-check-label">Activo</label>
+    </div>
+
+    <button class="btn btn-primary" onclick="guardarSlide()">Guardar</button>
+
+</div>
+
+<script>
+    async function guardarSlide() {
+        const data = {
+            areaId: parseInt(document.getElementById("areaId").value),
+            titulo: document.getElementById("titulo").value,
+            orden: parseInt(document.getElementById("orden").value),
+            activo: document.getElementById("activo").checked
+        };
+
+        const resp = await fetch('/Admin/CreateSlideFetch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        const result = await resp.json();
+
+        if (resp.ok) {
+            alert(result.message);
+            window.location.href = "/Admin/Slides?areaId=" + data.areaId;
+        } else {
+            alert("Error: " + result.message);
+        }
+    }
+</script>

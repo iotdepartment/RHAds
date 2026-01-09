@@ -1,0 +1,63 @@
+﻿@{
+    ViewData["Title"] = "Panel de Administración";
+}
+
+<h1 class="mb-4">Panel de Administración</h1>
+
+<div class="row g-4">
+
+    <!-- ÁREAS -->
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <h4 class="card-title mb-3">Áreas</h4>
+                <p class="text-muted">Administra las áreas del sistema.</p>
+
+                <a href="/Admin/Areas" class="btn btn-primary w-100 mb-2">
+                    Ver Áreas
+                </a>
+
+                <a href="/Admin/CreateArea" class="btn btn-success w-100">
+                    Crear Área
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDES -->
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <h4 class="card-title mb-3">Slides</h4>
+                <p class="text-muted">Administra los slides de cada área.</p>
+
+                <a href="/Admin/Areas" class="btn btn-primary w-100 mb-2">
+                    Ver Slides por Área
+                </a>
+
+                <a href="/Admin/CreateSlide?areaId=1" class="btn btn-success w-100">
+                    Crear Slide
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- IMÁGENES -->
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <h4 class="card-title mb-3">Imágenes</h4>
+                <p class="text-muted">Administra las imágenes de cada slide.</p>
+
+                <a href="/Admin/Areas" class="btn btn-primary w-100 mb-2">
+                    Ver Imágenes por Slide
+                </a>
+
+                <a href="/Admin/AddImage?slideId=1" class="btn btn-success w-100">
+                    Agregar Imagen
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>

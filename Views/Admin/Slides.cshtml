@@ -1,0 +1,43 @@
+﻿@model Area
+
+<h2>Slides del Área: @Model.Nombre</h2>
+
+<a href="/Admin/CreateSlide?areaId=@Model.AreaId" class="btn btn-success mb-3">Crear Slide</a>
+
+<table id="tablaSlides" class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>Título</th>
+            <th>Orden</th>
+            <th>Activo</th>
+            <th>Imágenes</th>
+            <th>Fullscreen</th> <!-- NUEVA COLUMNA -->
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var s in Model.Slides.OrderBy(x => x.Orden))
+        {
+            <tr>
+                <td>@s.Titulo</td>
+                <td>@s.Orden</td>
+                <td>@(s.Activo ? "Sí" : "No")</td>
+                <td>
+                    <a href="/Admin/Images?slideId=@s.SlideId" class="btn btn-primary btn-sm">
+                        Ver Imágenes
+                    </a>
+                </td>
+
+                <td>
+                    <a href="/Admin/Fullscreen?areaId=@Model.AreaId"
+                       class="btn btn-dark btn-sm" target="_blank">
+                        Ver Fullscreen
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<script>
+    new DataTable('#tablaSlides');
+</script>

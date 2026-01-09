@@ -1,0 +1,31 @@
+﻿@model Slide
+
+<h2>Imágenes del Slide: @Model.Titulo</h2>
+
+<a href="/Admin/AddImage?slideId=@Model.SlideId" class="btn btn-success mb-3">Agregar Imagen</a>
+
+<table id="tablaImagenes" class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>Vista previa</th>
+            <th>Descripción</th>
+            <th>Orden</th>
+            <th>Activo</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var img in Model.SlideImages.OrderBy(x => x.Orden))
+        {
+            <tr>
+                <td><img src="@img.RutaImagen" style="height:80px" /></td>
+                <td>@img.Descripcion</td>
+                <td>@img.Orden</td>
+                <td>@(img.Activo ? "Sí" : "No")</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<script>
+    new DataTable('#tablaImagenes');
+</script>

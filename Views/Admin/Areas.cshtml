@@ -1,0 +1,47 @@
+﻿@model IEnumerable<Area>
+
+<h2>Áreas</h2>
+
+<a href="/Admin/CreateArea" class="btn btn-success mb-3">Crear Área</a>
+
+<table id="tablaAreas" class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Descripción</th>
+            <th>Activo</th>
+            <th>Slides</th>
+            <th>Layout</th> <!-- NUEVA COLUMNA -->
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var a in Model)
+        {
+            <tr>
+                <td>@a.Nombre</td>
+                <td>@a.Descripcion</td>
+                <td>@(a.Activo ? "Sí" : "No")</td>
+
+                <td>
+                    <a href="/Admin/Slides?areaId=@a.AreaId" class="btn btn-primary btn-sm">
+                        Ver Slides
+                    </a>
+                </td>
+
+                <td>
+                    <a href="/Admin/EditorLayout?areaId=@a.AreaId" class="btn btn-warning btn-sm">
+                        Editar Layout
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+    new DataTable('#tablaAreas');
+</script>

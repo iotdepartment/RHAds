@@ -1,0 +1,37 @@
+{
+  "version": "3.0",
+  "defaultProvider": "cdnjs",
+  "libraries": [
+    {
+      "library": "Glide.js@3.6.0",
+      "destination": "wwwroot/lib/Glide.js/",
+      "files": [
+        "css/glide.core.min.css",
+        "glide.min.js"
+      ]
+    },
+    {
+      "library": "Swiper@11.0.5",
+      "destination": "wwwroot/lib/Swiper/",
+      "files": [
+        "swiper-bundle.min.js",
+        "swiper-bundle.min.css"
+      ]
+    },
+    {
+      "provider": "cdnjs",
+      "library": "gridstack.js@12.3.3",
+      "destination": "wwwroot/lib/gridstack/",
+      "files": [
+        "gridstack.min.js",
+        "gridstack.min.css",
+        "gridstack-all.js"
+      ]
+    },
+    {
+      "provider": "cdnjs",
+      "library": "gridstack.js@12.3.3",
+      "destination": "wwwroot/lib/gridstack/"
+    }
+  ]
+}

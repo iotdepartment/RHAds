@@ -1,0 +1,57 @@
+﻿@model IEnumerable<Area>
+
+@{
+    ViewData["Title"] = "Panel de Administración";
+}
+
+<h1 class="mb-4">Panel de Administración</h1>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th style="width: 20%">Área</th>
+                    <th style="width: 60%">Slides</th>
+                    <th style="width: 20%">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var area in Model)
+                {
+                    <tr>
+                        <td>
+                            <strong>@area.Nombre</strong><br />
+                            <small class="text-muted">@area.Descripcion</small>
+                        </td>
+
+                        <td>
+                            <ul class="list-group">
+                                @foreach (var slide in area.Slides.OrderBy(s => s.Orden))
+                                {
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>
+                                            <strong>@slide.Titulo</strong>
+                                            <small class="text-muted">(Orden: @slide.Orden)</small>
+                                        </span>
+
+                                        <span class="badge bg-primary rounded-pill">
+                                            @slide.SlideImages.Count imagen(es)
+                                        </span>
+                                    </li>
+                                }
+                            </ul>
+                        </td>
+
+                        <td class="text-center">
+                            <a href="@Url.Action("Slides", "Admin", new { areaId = area.AreaId })"
+                               class="btn btn-sm btn-primary">
+                                Administrar Slides
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
