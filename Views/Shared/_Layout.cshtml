@@ -16,9 +16,9 @@
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
+            <div class="container">
 
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">RHAds</a>
+                <a class="navbar-brand" asp-area="" asp-controller="Admin" asp-action="Areas">RHAds</a>
 
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
                         aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -30,37 +30,9 @@
 
                         <!-- Home -->
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link text-dark" asp-controller="Admin" asp-action="Areas">Home</a>
                         </li>
 
-                        <!-- ADMIN DROPDOWN -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle text-dark" href="#" id="adminDropdown"
-                               role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Administración
-                            </a>
-
-                            <ul class="dropdown-menu" aria-labelledby="adminDropdown">
-
-                                <!-- Áreas -->
-                                <li><h6 class="dropdown-header">Áreas</h6></li>
-                                <li><a class="dropdown-item" href="/Admin/Areas">Ver Áreas</a></li>
-                                <li><a class="dropdown-item" href="/Admin/CreateArea">Crear Área</a></li>
-                                <li><hr class="dropdown-divider" /></li>
-
-                                <!-- Slides -->
-                                <li><h6 class="dropdown-header">Slides</h6></li>
-                                <li><a class="dropdown-item" href="/Admin/Areas">Ver Slides por Área</a></li>
-                                <li><a class="dropdown-item" href="/Admin/CreateSlide?areaId=1">Crear Slide</a></li>
-                                <li><hr class="dropdown-divider" /></li>
-
-                                <!-- Imágenes -->
-                                <li><h6 class="dropdown-header">Imágenes</h6></li>
-                                <li><a class="dropdown-item" href="/Admin/Areas">Ver Imágenes por Slide</a></li>
-                                <li><a class="dropdown-item" href="/Admin/AddImage?slideId=1">Agregar Imagen</a></li>
-
-                            </ul>
-                        </li>
                       
 
                     </ul>

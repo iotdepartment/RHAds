@@ -1,0 +1,112 @@
+﻿@* @model int  <!-- slideId --> *@
+
+<div class="modal fade" id="modalAddImage" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Agregar Imagen</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <input type="hidden" id="imgSlideId" value="@Model" />
+
+                <!-- PREVIEW -->
+                <div class="text-center mb-3">
+                    <img id="imgPreview" src="" 
+                         style="max-height: 200px; display:none; border:1px solid #ccc; padding:5px;" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Seleccionar imagen</label>
+                    <input id="imgFile" type="file" class="form-control" accept="image/*">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Descripción</label>
+                    <textarea id="imgDescripcion" class="form-control" rows="2"></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Orden</label>
+                    <input id="imgOrden" type="number" class="form-control" value="1">
+                </div>
+
+                <div class="form-check mb-3">
+                    <input id="imgActivo" type="checkbox" class="form-check-input" checked>
+                    <label class="form-check-label">Activo</label>
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-success" onclick="guardarImagen()">Guardar</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    // PREVIEW AUTOMÁTICO
+    document.getElementById("imgFile").addEventListener("change", function () {
+        const file = this.files[0];
+        const preview = document.getElementById("imgPreview");
+
+        if (!file) {
+            preview.style.display = "none";
+            preview.src = "";
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            preview.src = e.target.result;
+            preview.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // GUARDAR IMAGEN POR AJAX
+    async function guardarImagen() {
+
+        const slideId = parseInt(document.getElementById("imgSlideId").value);
+        const descripcion = document.getElementById("imgDescripcion").value;
+        const orden = parseInt(document.getElementById("imgOrden").value);
+        const activo = document.getElementById("imgActivo").checked;
+        const fileInput = document.getElementById("imgFile");
+
+        if (fileInput.files.length === 0) {
+            alert("Selecciona una imagen.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("slideId", slideId);
+        formData.append("descripcion", descripcion);
+        formData.append("orden", orden);
+        formData.append("activo", activo);
+        formData.append("imagen", fileInput.files[0]);
+
+        const resp = await fetch('/Admin/AddImageUpload', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await resp.json();
+
+        if (resp.ok) {
+            alert(result.message);
+
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalAddImage'));
+            modal.hide();
+
+            location.reload();
+        } else {
+            alert("Error: " + result.message);
+        }
+    }
+</script>

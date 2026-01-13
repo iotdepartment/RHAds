@@ -1,0 +1,96 @@
+﻿<div class="modal fade" id="modalEditImage" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">Editar Imagen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <input type="hidden" id="editImageId">
+
+                <!-- PREVIEW -->
+                <div class="text-center mb-3">
+                    <img id="editPreview" src="" 
+                         style="max-height: 200px; display:block; border:1px solid #ccc; padding:5px;" />
+                </div>
+
+                <!-- NUEVA IMAGEN -->
+                <div class="mb-3">
+                    <label class="form-label">Cambiar imagen (opcional)</label>
+                    <input id="editFile" type="file" class="form-control" accept="image/*">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Descripción</label>
+                    <textarea id="editDescripcion" class="form-control" rows="2"></textarea>
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-warning" onclick="guardarEdicionImagen()">Guardar Cambios</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    async function openEditImage(id) {
+        const resp = await fetch('/Admin/GetImage?id=' + id);
+        const img = await resp.json();
+
+        document.getElementById("editImageId").value = img.imageId;
+        document.getElementById("editDescripcion").value = img.descripcion;
+
+        // Mostrar imagen actual
+        document.getElementById("editPreview").src = img.rutaImagen;
+
+        new bootstrap.Modal(document.getElementById('modalEditImage')).show();
+    }
+
+    // PREVIEW DINÁMICO DE NUEVA IMAGEN
+    document.getElementById("editFile").addEventListener("change", function () {
+        const file = this.files[0];
+        const preview = document.getElementById("editPreview");
+
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            preview.src = e.target.result; // ← Aquí se actualiza el preview
+        };
+        reader.readAsDataURL(file);
+    });
+
+    async function guardarEdicionImagen() {
+        const formData = new FormData();
+
+        formData.append("imageId", document.getElementById("editImageId").value);
+        formData.append("descripcion", document.getElementById("editDescripcion").value);
+
+
+        const fileInput = document.getElementById("editFile");
+        if (fileInput.files.length > 0) {
+            formData.append("nuevaImagen", fileInput.files[0]);
+        }
+
+        const resp = await fetch('/Admin/EditImageUpload', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await resp.json();
+
+        if (resp.ok) {
+            alert(result.message);
+            location.reload();
+        } else {
+            alert("Error: " + result.message);
+        }
+    }
+</script>

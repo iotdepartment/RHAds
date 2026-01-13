@@ -1,0 +1,11 @@
+version: "3.9"
+
+services:
+  rhads:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rhads
+    ports:
+      - "15000:80"
+    restart: always

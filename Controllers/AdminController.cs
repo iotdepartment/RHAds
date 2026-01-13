@@ -26,12 +26,6 @@ namespace RHAds.Controllers
             return View(areas);
         }
 
-        // CREAR ÁREA (VISTA)
-        public IActionResult CreateArea()
-        {
-            return View();
-        }
-
         // CREAR ÁREA (FETCH)
         [HttpPost]
         public async Task<IActionResult> CreateAreaFetch([FromBody] Area model)
@@ -62,14 +56,28 @@ namespace RHAds.Controllers
             return View();
         }
 
-        // CREAR SLIDE (FETCH)
         [HttpPost]
         public async Task<IActionResult> CreateSlideFetch([FromBody] Slide model)
         {
             if (string.IsNullOrWhiteSpace(model.Titulo))
                 return BadRequest(new { message = "El título es obligatorio." });
 
+            // Guardar slide
             _context.Slides.Add(model);
+            await _context.SaveChangesAsync();
+
+            // Crear layout inicial
+            var layout = new SlideLayout
+            {
+                SlideId = model.SlideId,
+                AreaId = model.AreaId,
+                X = 0,
+                Y = 10,   // posición segura
+                Width = 2,
+                Height = 2
+            };
+
+            _context.SlideLayouts.Add(layout);
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Slide creado correctamente." });
@@ -93,40 +101,139 @@ namespace RHAds.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddImageUpload(IFormFile archivo, int slideId, string descripcion, int orden, bool activo)
+        public async Task<IActionResult> AddImageUpload(IFormFile imagen, int slideId, string descripcion, int orden, bool activo)
         {
-            if (archivo == null || archivo.Length == 0)
-                return BadRequest(new { message = "No se seleccionó ninguna imagen." });
+            if (imagen == null || imagen.Length == 0)
+                return BadRequest(new { message = "No se recibió ninguna imagen." });
 
             // Crear carpeta si no existe
-            var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/slides");
+            var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/slides");
             if (!Directory.Exists(folder))
                 Directory.CreateDirectory(folder);
 
             // Nombre único
-            var fileName = $"slide_{slideId}_{Guid.NewGuid()}{Path.GetExtension(archivo.FileName)}";
+            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(imagen.FileName)}";
             var filePath = Path.Combine(folder, fileName);
 
-            // Guardar archivo físicamente
+            // Guardar archivo
             using (var stream = new FileStream(filePath, FileMode.Create))
             {
-                await archivo.CopyToAsync(stream);
+                await imagen.CopyToAsync(stream);
             }
 
             // Guardar en BD
-            var img = new SlideImage
+            var slideImage = new SlideImage
             {
                 SlideId = slideId,
-                RutaImagen = "/images/slides/" + fileName,
                 Descripcion = descripcion,
                 Orden = orden,
-                Activo = activo
+                Activo = activo,
+                RutaImagen = $"/uploads/slides/{fileName}"
             };
 
-            _context.SlideImages.Add(img);
+            _context.SlideImages.Add(slideImage);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Imagen subida correctamente." });
+            return Ok(new { message = "Imagen agregada correctamente." });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetImage(int id)
+        {
+            var img = await _context.SlideImages.FirstOrDefaultAsync(x => x.ImageId == id);
+
+            if (img == null)
+                return BadRequest(new { message = "Imagen no encontrada." });
+
+            return Json(img);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EditImageUpload(IFormFile nuevaImagen, int imageId, string descripcion)
+        {
+            var img = await _context.SlideImages.FirstOrDefaultAsync(x => x.ImageId == imageId);
+
+            if (img == null)
+                return BadRequest(new { message = "Imagen no encontrada." });
+
+            // Actualizar solo la descripción
+            img.Descripcion = descripcion ?? "";
+
+            // Si NO se subió una nueva imagen, solo guarda la descripción
+            if (nuevaImagen == null || nuevaImagen.Length == 0)
+            {
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Imagen actualizada correctamente." });
+            }
+
+            // Carpeta donde se guardan las imágenes
+            var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "slides");
+            if (!Directory.Exists(folder))
+                Directory.CreateDirectory(folder);
+
+            // Eliminar imagen anterior si existe
+            if (!string.IsNullOrEmpty(img.RutaImagen))
+            {
+                var oldPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", img.RutaImagen.TrimStart('/'));
+                if (System.IO.File.Exists(oldPath))
+                    System.IO.File.Delete(oldPath);
+            }
+
+            // Guardar nueva imagen
+            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(nuevaImagen.FileName)}";
+            var filePath = Path.Combine(folder, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await nuevaImagen.CopyToAsync(stream);
+            }
+
+            img.RutaImagen = $"/images/slides/{fileName}";
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Imagen actualizada correctamente." });
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> DeleteImageFetch(int id)
+        {
+            var img = await _context.SlideImages.FindAsync(id);
+            if (img == null)
+                return NotFound(new { message = "Imagen no encontrada." });
+
+            _context.SlideImages.Remove(img);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Imagen eliminada correctamente." });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateImageOrder([FromBody] List<SlideImage> orden)
+        {
+            foreach (var item in orden)
+            {
+                var img = await _context.SlideImages.FirstOrDefaultAsync(x => x.ImageId == item.ImageId);
+                if (img != null)
+                    img.Orden = item.Orden;
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateImageActivo([FromBody] SlideImage model)
+        {
+            var img = await _context.SlideImages.FirstOrDefaultAsync(x => x.ImageId == model.ImageId);
+
+            if (img == null)
+                return BadRequest(new { message = "Imagen no encontrada." });
+
+            img.Activo = model.Activo;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Estado actualizado." });
         }
 
         [HttpGet]
@@ -190,5 +297,59 @@ namespace RHAds.Controllers
 
             return RedirectToAction("Fullscreen", new { areaId });
         }
+
+        [HttpPost]
+        public IActionResult UpdateSlideColorAjax([FromBody] UpdateColorDto dto)
+        {
+            var slide = _context.Slides.FirstOrDefault(x => x.SlideId == dto.SlideId);
+            if (slide == null)
+                return NotFound(new { message = "Slide no encontrado" });
+
+            slide.ColorCabecera = dto.Color;
+            _context.SaveChanges();
+
+            return Json(new { message = "Color actualizado", color = slide.ColorCabecera });
+        }
+
+        public class UpdateColorDto
+        {
+            public int SlideId { get; set; }
+            public string Color { get; set; }
+        }
+
+        [HttpPost]
+        public IActionResult ToggleSlideActivoAjax([FromBody] ToggleSlideActivoDto dto)
+        {
+            var slide = _context.Slides.FirstOrDefault(x => x.SlideId == dto.SlideId);
+            if (slide == null)
+                return NotFound();
+
+            // Si se está reactivando
+            if (dto.Activo && !slide.Activo)
+            {
+                var layout = _context.SlideLayouts.FirstOrDefault(x => x.SlideId == dto.SlideId);
+
+                if (layout != null)
+                {
+                    // Resetear posición para evitar colisiones
+                    layout.X = 0;
+                    layout.Y = 10; // por ejemplo, última fila
+                    layout.Width = 2;
+                    layout.Height = 2;
+                }
+            }
+
+            slide.Activo = dto.Activo;
+            _context.SaveChanges();
+
+            return Json(new { ok = true });
+        }
+        public class ToggleSlideActivoDto
+        {
+            public int SlideId { get; set; }
+            public bool Activo { get; set; }
+        }
+
+
     }
 }

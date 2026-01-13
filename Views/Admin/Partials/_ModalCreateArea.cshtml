@@ -1,0 +1,69 @@
+﻿<!-- Modal Crear Área -->
+<div class="modal fade" id="modalCreateArea" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Crear Área</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <div class="mb-3">
+                    <label class="form-label">Nombre</label>
+                    <input id="areaNombre" class="form-control" placeholder="Nombre del área">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Descripción</label>
+                    <textarea id="areaDescripcion" class="form-control" rows="3" placeholder="Descripción"></textarea>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input id="areaActivo" type="checkbox" class="form-check-input" checked>
+                    <label class="form-check-label">Activo</label>
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-success" onclick="guardarArea()">Guardar</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    async function guardarArea() {
+
+        const data = {
+            nombre: document.getElementById("areaNombre").value,
+            descripcion: document.getElementById("areaDescripcion").value,
+            activo: document.getElementById("areaActivo").checked
+        };
+
+        const resp = await fetch('/Admin/CreateAreaFetch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        const result = await resp.json();
+
+        if (resp.ok) {
+            alert(result.message);
+
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalCreateArea'));
+            modal.hide();
+
+            // Recargar tabla
+            location.reload();
+        } else {
+            alert("Error: " + result.message);
+        }
+    }
+</script>

@@ -1,8 +1,11 @@
 ﻿@model Area
 
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 <h2>Slides del Área: @Model.Nombre</h2>
 
-<a href="/Admin/CreateSlide?areaId=@Model.AreaId" class="btn btn-success mb-3">Crear Slide</a>
+<button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#modalCreateSlide">
+    Crear Slide
+</button>
 
 <table id="tablaSlides" class="table table-striped table-bordered">
     <thead>
@@ -11,7 +14,8 @@
             <th>Orden</th>
             <th>Activo</th>
             <th>Imágenes</th>
-            <th>Fullscreen</th> <!-- NUEVA COLUMNA -->
+            <th>Color</th>
+            <th>Fullscreen</th>
         </tr>
     </thead>
     <tbody>
@@ -20,13 +24,31 @@
             <tr>
                 <td>@s.Titulo</td>
                 <td>@s.Orden</td>
-                <td>@(s.Activo ? "Sí" : "No")</td>
+                <td>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input toggle-activo"
+                               type="checkbox"
+                               data-slide-id="@s.SlideId"
+                               @(s.Activo ? "checked" : "") />
+                    </div>
+                </td>
+
                 <td>
                     <a href="/Admin/Images?slideId=@s.SlideId" class="btn btn-primary btn-sm">
                         Ver Imágenes
                     </a>
                 </td>
 
+                <!-- SELECTOR DE COLOR -->
+                <td>
+                <div class="d-flex align-items-center gap-2">
+                    <input type="color"
+                           class="form-control form-control-color color-picker"
+                           data-slide-id="@s.SlideId"
+                           value="@s.ColorCabecera"
+                           title="Selecciona un color" />
+                </div>
+                </td>
                 <td>
                     <a href="/Admin/Fullscreen?areaId=@Model.AreaId"
                        class="btn btn-dark btn-sm" target="_blank">
@@ -37,7 +59,63 @@
         }
     </tbody>
 </table>
+@await Html.PartialAsync("Partials/_ModalCreateSlide", Model.AreaId)
 
-<script>
-    new DataTable('#tablaSlides');
-</script>
+@section Scripts{
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script>
+        new DataTable('#tablaSlides');
+
+        // Delegación de eventos para que funcione incluso cuando DataTables re-renderiza
+        document.addEventListener("change", function (e) {
+            if (e.target.classList.contains("toggle-activo")) {
+
+                const slideId = e.target.getAttribute("data-slide-id");
+                const activo = e.target.checked;
+
+                fetch("/Admin/ToggleSlideActivoAjax", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        slideId: slideId,
+                        activo: activo
+                    })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    console.log("Estado guardado:", data);
+                })
+                .catch(err => console.error("Error:", err));
+            }
+        });
+    </script>
+    <script>
+        // Delegación de eventos para el colorpicker
+        document.addEventListener("change", function (e) {
+            if (e.target.classList.contains("color-picker")) {
+
+                const slideId = e.target.getAttribute("data-slide-id");
+                const color = e.target.value;
+
+                fetch("/Admin/UpdateSlideColorAjax", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        slideId: slideId,
+                        color: color
+                    })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    console.log("Color guardado:", data);
+                })
+                .catch(err => console.error("Error:", err));
+            }
+        });
+    </script>
+}

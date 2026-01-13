@@ -1,8 +1,14 @@
 ﻿@model IEnumerable<Area>
 
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+
 <h2>Áreas</h2>
 
-<a href="/Admin/CreateArea" class="btn btn-success mb-3">Crear Área</a>
+<!-- BOTÓN QUE ABRE EL MODAL -->
+<button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#modalCreateArea">
+    Crear Área
+</button>
 
 <table id="tablaAreas" class="table table-striped table-bordered">
     <thead>
@@ -10,8 +16,7 @@
             <th>Nombre</th>
             <th>Descripción</th>
             <th>Activo</th>
-            <th>Slides</th>
-            <th>Layout</th> <!-- NUEVA COLUMNA -->
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -23,14 +28,17 @@
                 <td>@(a.Activo ? "Sí" : "No")</td>
 
                 <td>
-                    <a href="/Admin/Slides?areaId=@a.AreaId" class="btn btn-primary btn-sm">
-                        Ver Slides
+                    <a href="/Admin/Slides?areaId=@a.AreaId" class="btn btn-primary btn-sm rounded-pill" title="Slides">
+                        <i class="bi bi-file-earmark-easel-fill"></i>
                     </a>
-                </td>
 
-                <td>
-                    <a href="/Admin/EditorLayout?areaId=@a.AreaId" class="btn btn-warning btn-sm">
-                        Editar Layout
+                    <a href="/Admin/EditorLayout?areaId=@a.AreaId" title="Edición de Layout" class="btn btn-warning btn-sm rounded-pill">
+                        <i class="bi bi-columns-gap"></i>
+                    </a>
+
+                    <a href="/Admin/Fullscreen?areaId=@a.AreaId"
+                       class="btn btn-dark btn-sm rounded-pill" target="_blank" title="Fullscreen">
+                        <i class="bi bi-fullscreen"></i>
                     </a>
                 </td>
             </tr>
@@ -38,10 +46,16 @@
     </tbody>
 </table>
 
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<!-- LLAMADA AL PARTIAL -->
+@await Html.PartialAsync("Partials/_ModalCreateArea")
 
-<script>
-    new DataTable('#tablaAreas');
-</script>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+    <script>
+        new DataTable('#tablaAreas');
+    </script>
+
+}

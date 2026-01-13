@@ -92,7 +92,7 @@
              data-gs-no-move="true"
              data-gs-no-resize="true">
 
-            <div class="grid-stack-item-content d-flex justify-content-center align-items-center">
+            <div class="grid-stack-item-content d-flex justify-content-center align-items-center bg-secondary-subtle">
                 <img src="/images/logo.png" class="img-fluid w-75 h-75 object-fit-contain" />
             </div>
 
@@ -116,7 +116,7 @@
         </div>
 
         <!-- SLIDES -->
-        @foreach (var layout in Model.SlideLayouts)
+        @foreach (var layout in Model.SlideLayouts.Where(x => x.Slide.Activo))
         {
             <div class="grid-stack-item"
                  data-gs-id="@layout.SlideId"
@@ -129,7 +129,10 @@
 
                 <div class="grid-stack-item-content">
 
-                    <div class="slide-title">@layout.Slide.Titulo</div>
+                    <div class="slide-title w-100 text-center"
+                         style="background:@layout.Slide.ColorCabecera;">
+                        @layout.Slide.Titulo
+                    </div>
 
                     <div class="carousel-area d-flex justify-content-center align-items-center">
                         <div class="carousel-wrapper w-100 h-100">

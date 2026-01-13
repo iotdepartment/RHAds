@@ -29,7 +29,7 @@ app.UseAuthorization();
 // Ruta por defecto → Panel Admin (Menu)
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Admin}/{action=Menu}/{id?}"
+    pattern: "{controller=Admin}/{action=Areas}/{id?}"
 );
 
 app.Run();
