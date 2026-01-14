@@ -39,6 +39,40 @@ namespace RHAds.Controllers
             return Ok(new { message = "Área creada correctamente." });
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetArea(int id)
+        {
+            var area = await _context.Areas.FirstOrDefaultAsync(x => x.AreaId == id);
+            if (area == null) return NotFound();
+
+            return Json(new { area.AreaId, area.Nombre, area.Descripcion });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EditArea(int areaId, string nombre, string descripcion)
+        {
+            var area = await _context.Areas.FirstOrDefaultAsync(x => x.AreaId == areaId);
+            if (area == null) return BadRequest(new { message = "Área no encontrada." });
+
+            area.Nombre = nombre;
+            area.Descripcion = descripcion;
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Área actualizada correctamente." });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateAreaActivo([FromBody] Area model)
+        {
+            var area = await _context.Areas.FirstOrDefaultAsync(x => x.AreaId == model.AreaId);
+            if (area == null) return BadRequest(new { message = "Área no encontrada." });
+
+            area.Activo = model.Activo;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Estado actualizado." });
+        }
+
         // LISTA DE SLIDES
         public async Task<IActionResult> Slides(int areaId)
         {
@@ -56,6 +90,7 @@ namespace RHAds.Controllers
             return View();
         }
 
+        //FETCH CREAR SLIDE
         [HttpPost]
         public async Task<IActionResult> CreateSlideFetch([FromBody] Slide model)
         {
@@ -195,7 +230,6 @@ namespace RHAds.Controllers
             return Ok(new { message = "Imagen actualizada correctamente." });
         }
 
-        [HttpDelete]
         public async Task<IActionResult> DeleteImageFetch(int id)
         {
             var img = await _context.SlideImages.FindAsync(id);

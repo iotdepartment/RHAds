@@ -1,6 +1,8 @@
 ﻿@model Area
 
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+
 <h2>Slides del Área: @Model.Nombre</h2>
 
 <button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#modalCreateSlide">
@@ -10,15 +12,15 @@
 <table id="tablaSlides" class="table table-striped table-bordered">
     <thead>
         <tr>
-            <th>Título</th>
-            <th>Orden</th>
-            <th>Activo</th>
-            <th>Imágenes</th>
-            <th>Color</th>
-            <th>Fullscreen</th>
+            <th class="text-center">Título</th>
+            <th class="text-center">Orden</th>
+            <th class="text-center">Activo</th>
+            <th class="text-center">Color</th>
+            <th class="text-center">Actions</th>
+
         </tr>
     </thead>
-    <tbody>
+    <tbody class="text-center">
         @foreach (var s in Model.Slides.OrderBy(x => x.Orden))
         {
             <tr>
@@ -33,15 +35,10 @@
                     </div>
                 </td>
 
-                <td>
-                    <a href="/Admin/Images?slideId=@s.SlideId" class="btn btn-primary btn-sm">
-                        Ver Imágenes
-                    </a>
-                </td>
-
+              
                 <!-- SELECTOR DE COLOR -->
                 <td>
-                <div class="d-flex align-items-center gap-2">
+                <div>
                     <input type="color"
                            class="form-control form-control-color color-picker"
                            data-slide-id="@s.SlideId"
@@ -51,10 +48,14 @@
                 </td>
                 <td>
                     <a href="/Admin/Fullscreen?areaId=@Model.AreaId"
-                       class="btn btn-dark btn-sm" target="_blank">
-                        Ver Fullscreen
+                       class="btn btn-dark btn-sm rounded-pill" target="_blank" title="Fullscreen">
+                        <i class="bi bi-fullscreen"></i>
+                    </a>
+                    <a href="/Admin/Images?slideId=@s.SlideId" class="btn btn-primary btn-sm rounded-pill" title="Ver Imagenes">
+                        <i class="bi bi-card-image"></i>
                     </a>
                 </td>
+
             </tr>
         }
     </tbody>
@@ -65,8 +66,9 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script>
-        new DataTable('#tablaSlides');
-
+        new DataTable('#tablaSlides', {
+            searching: false
+        } );
         // Delegación de eventos para que funcione incluso cuando DataTables re-renderiza
         document.addEventListener("change", function (e) {
             if (e.target.classList.contains("toggle-activo")) {

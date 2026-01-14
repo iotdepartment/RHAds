@@ -22,7 +22,7 @@
             <th class="text-center" style="width:40px;">Mover</th>
         </tr>
     </thead>
-    <tbody id="sortableImages" class="align-items-center justify-content-center text-center ">
+    <tbody id="sortableImages" class="align-items-center justify-content-center text-center">
         @foreach (var img in Model.SlideImages.OrderBy(x => x.Orden))
         {
             <tr data-id="@img.ImageId" class="">

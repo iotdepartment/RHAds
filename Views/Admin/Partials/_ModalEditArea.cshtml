@@ -1,0 +1,35 @@
+﻿<div class="modal fade" id="modalEditArea" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">Editar Área</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <input type="hidden" id="editAreaId">
+
+                <div class="mb-3">
+                    <label class="form-label">Nombre</label>
+                    <input id="editNombre" type="text" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Descripción</label>
+                    <textarea id="editDescripcion" class="form-control" rows="2"></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-warning" onclick="guardarEdicionArea()">Guardar Cambios</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    
+}

@@ -148,18 +148,23 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-
             const TOTAL_ROWS = 12;
             const gridHeight = window.innerHeight;
             const cellHeight = gridHeight / TOTAL_ROWS;
 
-            GridStack.init({
-                staticGrid: true,     // ← NO editable
+            const grid = GridStack.init({
+                staticGrid: true,
                 cellHeight: cellHeight,
                 float: true,
                 disableOneColumnMode: true,
                 margin: 0,
                 maxRow: TOTAL_ROWS
+            });
+
+            window.addEventListener("resize", function () {
+                const newHeight = window.innerHeight;
+                const newCellHeight = newHeight / TOTAL_ROWS;
+                grid.cellHeight(newCellHeight);
             });
         });
     </script>
