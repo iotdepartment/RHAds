@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using RHAds.Models.Safety;
 
 namespace RHAds.Data
 {
@@ -14,6 +15,7 @@ namespace RHAds.Data
         public DbSet<Slide> Slides { get; set; }
         public DbSet<SlideImage> SlideImages { get; set; }
         public DbSet<SlideLayout> SlideLayouts { get; set; } // ← FALTABA ESTO
+        public DbSet<SafetyEvent> SafetyEvents { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
