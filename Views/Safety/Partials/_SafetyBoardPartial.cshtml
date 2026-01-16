@@ -1,0 +1,85 @@
+﻿@model Dictionary<int, string>
+
+<div class="cross-container">
+
+    @for (int i = 1; i <= 6; i += 2)
+    {
+        <div class="row">
+            <div class="day @Model[i]">@i</div>
+            <div class="day @Model[i + 1]">@((i + 1))</div>
+        </div>
+    }
+
+    @for (int i = 7; i <= 24; i += 6)
+    {
+        <div class="row">
+            @for (int d = i; d < i + 6; d++)
+            {
+                <div class="day @Model[d]">@d</div>
+            }
+        </div>
+    }
+
+    @for (int i = 25; i <= 30; i += 2)
+    {
+        <div class="row">
+            <div class="day @Model[i]">@i</div>
+            <div class="day @Model[i + 1]">@((i + 1))</div>
+        </div>
+    }
+
+    <div class="row">
+        <div class="day day-wide @Model[31]">31</div>
+    </div>
+
+</div>
+
+<style>
+    .cross-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .row {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .day {
+        width: 60px;
+        height: 60px;
+        border: 1px solid #ccc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        background: #f8f9fa;
+    }
+
+    .day-wide {
+        width: 132px;
+    }
+
+    .green {
+        background-color: #28a745 !important;
+        color: white;
+    }
+
+    .yellow {
+        background-color: #ffc107 !important;
+        color: black;
+    }
+
+    .red {
+        background-color: #dc3545 !important;
+        color: white;
+    }
+
+    .blue {
+        background-color: #007bff !important;
+        color: white;
+    }
+</style>

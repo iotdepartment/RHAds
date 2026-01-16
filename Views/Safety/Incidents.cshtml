@@ -1,0 +1,66 @@
+﻿@model List<RHAds.Models.Safety.SafetyEvent>
+
+<h2>Registro de Incidentes</h2>
+
+<button class="btn btn-success mb-3" onclick="abrirModalEvento()">Registrar Evento</button>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>Descripción</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var e in Model)
+        {
+            <tr>
+                <td>@e.Fecha.ToShortDateString()</td>
+                <td>@e.Tipo</td>
+                <td>@e.Descripcion</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Modal dinámico -->
+<div class="modal fade" id="modalEvento" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" id="modalEventoContent"></div>
+    </div>
+</div>
+
+<script>
+    function abrirModalEvento() {
+        fetch('/Safety/CrearEventoModal')
+            .then(r => r.text())
+            .then(html => {
+                document.getElementById("modalEventoContent").innerHTML = html;
+                let modal = new bootstrap.Modal(document.getElementById("modalEvento"));
+                modal.show();
+            });
+    }
+
+    function guardarEvento() {
+        const data = {
+            fecha: document.getElementById("fecha").value,
+            tipo: parseInt(document.getElementById("tipo").value),
+            descripcion: document.getElementById("descripcion").value
+        };
+
+        fetch('/Safety/CrearEventoAjax', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                location.reload();
+            } else {
+                alert("Error: " + res.message);
+            }
+        });
+    }
+</script>

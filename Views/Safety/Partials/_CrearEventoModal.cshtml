@@ -1,0 +1,34 @@
+﻿@model RHAds.Models.Safety.SafetyEvent
+
+<div class="modal-header">
+    <h5 class="modal-title">Registrar Evento</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+
+<div class="modal-body">
+
+    <div class="mb-3">
+        <label>Fecha</label>
+        <input type="date" id="fecha" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Tipo</label>
+        <select id="tipo" class="form-select">
+            <option value="1">Near Miss</option>
+            <option value="2">Incidente</option>
+            <option value="3">Accidente</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label>Descripción</label>
+        <textarea id="descripcion" class="form-control"></textarea>
+    </div>
+
+</div>
+
+<div class="modal-footer">
+    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarEvento()">Guardar</button>
+</div>
