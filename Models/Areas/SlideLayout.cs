@@ -1,4 +1,6 @@
-﻿public class SlideLayout
+﻿using RHAds.Models.Areas;
+
+public class SlideLayout
 {
     public int SlideLayoutId { get; set; }
 

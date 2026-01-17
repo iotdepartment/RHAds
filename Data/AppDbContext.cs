@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using RHAds.Models.Safety;
+using RHAds.Models.Areas;
 
 namespace RHAds.Data
 {

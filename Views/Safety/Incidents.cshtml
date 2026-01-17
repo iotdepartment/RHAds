@@ -1,24 +1,50 @@
-﻿@model List<RHAds.Models.Safety.SafetyEvent>
+﻿@using RHAds.Models.Areas
+@model List<RHAds.Models.Safety.SafetyEvent>
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 
 <h2>Registro de Incidentes</h2>
 
-<button class="btn btn-success mb-3" onclick="abrirModalEvento()">Registrar Evento</button>
+<button class="btn btn-success mb-3" onclick="abrirModalCrear()">Registrar Evento</button>
 
-<table class="table table-bordered">
+<table id="tablaIncidentes" class="table table-bordered table-striped">
     <thead>
         <tr>
-            <th>Fecha</th>
-            <th>Tipo</th>
-            <th>Descripción</th>
+            <th class="text-center">Fecha</th>
+            <th class="text-center">Hora</th>
+            <th class="text-center">Área</th>
+            <th class="text-center">Tipo</th>
+            <th class="text-center">Descripción</th>
+            <th style="width:150px;" class="text-center">Acciones</th>
         </tr>
     </thead>
     <tbody>
         @foreach (var e in Model)
         {
-            <tr>
-                <td>@e.Fecha.ToShortDateString()</td>
-                <td>@e.Tipo</td>
-                <td>@e.Descripcion</td>
+            <tr data-id="@e.Id">
+                <td class="text-center">@e.Fecha.ToString("yyyy-MM-dd")</td>
+                <td class="text-center">@e.Fecha.ToString("HH:mm")</td>
+                <td class="text-center">@e.Area?.Nombre</td>
+                <td class="text-center">
+                    @if (e.Tipo == RHAds.Models.Safety.TipoEvento.Accidente)
+                    {
+                        <span class="badge bg-danger rounded-pill">Accidente</span>
+                    }
+                    else if (e.Tipo == RHAds.Models.Safety.TipoEvento.Incidente)
+                    {
+                        <span class="badge bg-warning text-dark rounded-pill">Incidente</span>
+                    }
+                    else if (e.Tipo == RHAds.Models.Safety.TipoEvento.NearMiss)
+                    {
+                        <span class="badge bg-primary rounded-pill">Near Miss</span>
+                    }
+                </td>
+                <td class="text-center">@e.Descripcion</td>
+                <td class="text-center">
+                    <button class="btn btn-warning btn-sm rounded-pill" onclick="abrirModalEditar(@e.Id)" title="Editar"><i class="bi bi-pencil-square"></i></button>
+                    <button class="btn btn-danger btn-sm rounded-pill" onclick="eliminarEvento(@e.Id)" title="Eliminar" ><i class="bi bi-trash-fill"></i></button>
+                </td>
             </tr>
         }
     </tbody>
@@ -31,8 +57,19 @@
     </div>
 </div>
 
+<!-- DataTables CDN -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+
+
 <script>
-    function abrirModalEvento() {
+   
+    /* ============================
+       ABRIR MODAL CREAR
+    ============================ */
+    function abrirModalCrear() {
         fetch('/Safety/CrearEventoModal')
             .then(r => r.text())
             .then(html => {
@@ -42,25 +79,130 @@
             });
     }
 
-    function guardarEvento() {
+    /* ============================
+       ABRIR MODAL EDITAR
+    ============================ */
+    function abrirModalEditar(id) {
+        fetch('/Safety/EditarEventoModal/' + id)
+            .then(r => r.text())
+            .then(html => {
+                document.getElementById("modalEventoContent").innerHTML = html;
+                let modal = new bootstrap.Modal(document.getElementById("modalEvento"));
+                modal.show();
+            });
+    }
+
+    /* ============================
+       GUARDAR (CREAR O EDITAR)
+    ============================ */
+      function guardarEvento(id = null) {
+
+        const fecha = document.getElementById("fecha").value;
+        const hora = document.getElementById("hora").value;
+        const fechaCompleta = fecha + "T" + hora + ":00";
+
         const data = {
-            fecha: document.getElementById("fecha").value,
+            fecha: fechaCompleta,
             tipo: parseInt(document.getElementById("tipo").value),
-            descripcion: document.getElementById("descripcion").value
+            descripcion: document.getElementById("descripcion").value,
+            areaId: parseInt(document.getElementById("areaId").value)
         };
 
-        fetch('/Safety/CrearEventoAjax', {
+        if (id !== null) {
+            data.id = id;
+        }
+
+        const url = id === null ? '/Safety/CrearEventoAjax' : '/Safety/EditarEventoAjax';
+
+        fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         })
         .then(r => r.json())
         .then(res => {
-            if (res.success) {
-                location.reload();
-            } else {
+            if (!res.success) {
                 alert("Error: " + res.message);
+                return;
+            }
+
+            // Cerrar modal
+            let modal = bootstrap.Modal.getInstance(document.getElementById("modalEvento"));
+            modal.hide();
+
+            // Si es creación → agregar fila
+            if (id === null) {
+                      tabla.row.add([
+                            `<span class="text-center d-block">${fecha}</span>`,
+                            `<span class="text-center d-block">${hora}</span>`,
+                            `<span class="text-center d-block">${res.areaNombre}</span>`,
+                            `<span class="text-center d-block rounded-pill">${res.tipoBadge}</span>`,
+                            `<span class="text-center d-block">${data.descripcion}</span>`,
+                            `
+                            <div class="text-center">
+                                <button class="btn btn-warning btn-sm rounded-pill" onclick="abrirModalEditar(${res.id})" title="Editar">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                                <button class="btn btn-danger btn-sm rounded-pill" onclick="eliminarEvento(${res.id})" title="Eliminar">
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                            </div>
+                            `
+                        ]).draw(false);
+            }
+            // Si es edición → actualizar fila existente
+            else {
+                let fila = tabla.row(`[data-id="${id}"]`);
+                        fila.data([
+                            `<span class="text-center d-block">${fecha}</span>`,
+                            `<span class="text-center d-block">${hora}</span>`,
+                            `<span class="text-center d-block">${res.areaNombre}</span>`,
+                            `<span class="text-center d-block rounded-pill">${res.tipoBadge}</span>`,
+                            `<span class="text-center d-block">${data.descripcion}</span>`,
+                            `
+                            <div class="text-center">
+                                <button class="btn btn-warning btn-sm rounded-pill" onclick="abrirModalEditar(${id})" title="Editar">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                                <button class="btn btn-danger btn-sm rounded-pill" onclick="eliminarEvento(${id})" title="Eliminar">
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                            </div>
+                            `
+                        ]).draw(false);
             }
         });
     }
+
+    /* ============================
+       ELIMINAR EVENTO
+    ============================ */
+          function eliminarEvento(id) {
+        if (!confirm("¿Seguro que deseas eliminar este evento?")) return;
+
+        fetch('/Safety/EliminarEventoAjax/' + id, { method: 'DELETE' })
+            .then(r => r.json())
+            .then(res => {
+                if (!res.success) {
+                    alert("Error: " + res.message);
+                    return;
+                }
+
+                tabla.row(`[data-id="${id}"]`).remove().draw(false);
+            });
+    }
+</script>
+
+<script>
+    let tabla;
+
+    document.addEventListener("DOMContentLoaded", function () {
+        tabla = new DataTable('#tablaIncidentes', {
+            responsive: true,
+            pageLength: 10,
+            language: {
+                url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+            }
+        });
+    });
 </script>

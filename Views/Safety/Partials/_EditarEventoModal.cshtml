@@ -1,0 +1,59 @@
+﻿@model RHAds.Models.Safety.SafetyEvent
+@using RHAds.Models.Areas
+@using RHAds.Models.Safety
+
+@{
+    var areas = ViewBag.Areas as List<Area>;
+}
+
+<div class="modal-header">
+    <h5 class="modal-title">Editar Evento</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+
+<div class="modal-body">
+
+    <input type="hidden" id="id" value="@Model.Id" />
+
+    <div class="mb-3">
+        <label>Fecha</label>
+        <input type="date" id="fecha" class="form-control" value="@Model.Fecha.ToString("yyyy-MM-dd")" />
+    </div>
+
+    <div class="mb-3">
+        <label>Hora</label>
+        <input type="time" id="hora" class="form-control" value="@Model.Fecha.ToString("HH:mm")" />
+    </div>
+
+    <div class="mb-3">
+        <label>Área</label>
+        <select id="areaId" class="form-select">
+            @foreach (var a in areas)
+            {
+                <option value="@a.AreaId" selected="@(a.AreaId == Model.AreaId)">
+                    @a.Nombre
+                </option>
+            }
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label>Tipo</label>
+        <select id="tipo" class="form-select">
+            <option value="1" selected="@(Model.Tipo == TipoEvento.NearMiss)">Near Miss</option>
+            <option value="2" selected="@(Model.Tipo == TipoEvento.Incidente)">Incidente</option>
+            <option value="3" selected="@(Model.Tipo == TipoEvento.Accidente)">Accidente</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label>Descripción</label>
+        <textarea id="descripcion" class="form-control">@Model.Descripcion</textarea>
+    </div>
+
+</div>
+
+<div class="modal-footer">
+    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarEvento(@Model.Id)">Guardar Cambios</button>
+</div>

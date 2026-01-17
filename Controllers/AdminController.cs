@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RHAds.Data;
-
+using RHAds.Models.Areas;
 namespace RHAds.Controllers
 {
     public class AdminController : Controller

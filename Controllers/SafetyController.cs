@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using RHAds.Data;
 using RHAds.Models.Safety;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using RHAds.Models.Areas;
 
 namespace RHAds.Controllers
 {
@@ -45,6 +47,7 @@ namespace RHAds.Controllers
         public IActionResult Incidents()
         {
             var eventos = _context.SafetyEvents
+                .Include(e => e.Area)
                 .OrderByDescending(e => e.Fecha)
                 .ToList();
 
@@ -54,6 +57,13 @@ namespace RHAds.Controllers
         // Modal para crear evento
         public IActionResult CrearEventoModal()
         {
+            var areas = _context.Areas
+                .Where(a => a.Activo)
+                .OrderBy(a => a.Nombre)
+                .ToList();
+
+            ViewBag.Areas = areas;
+
             return PartialView("Partials/_CrearEventoModal", new SafetyEvent());
         }
 
@@ -67,8 +77,60 @@ namespace RHAds.Controllers
             _context.SafetyEvents.Add(model);
             _context.SaveChanges();
 
+            return Json(new
+            {
+                success = true,
+                id = model.Id,
+                areaNombre = _context.Areas.Find(model.AreaId)?.Nombre,
+                tipoBadge = model.Tipo switch
+                {
+                    TipoEvento.Accidente => "<span class='badge bg-danger rounded-pill'>Accidente</span>",
+                    TipoEvento.Incidente => "<span class='badge bg-warning text-dark rounded-pill'>Incidente</span>",
+                    TipoEvento.NearMiss => "<span class='badge bg-primary rounded-pill'>Near Miss</span>",
+                    _ => "<span class='badge bg-secondary rounded-pill'>Desconocido</span>"
+                }
+            });
+        }
+
+        // MODAL EDITAR
+        public IActionResult EditarEventoModal(int id)
+        {
+            var evento = _context.SafetyEvents.Find(id);
+            ViewBag.Areas = _context.Areas.Where(a => a.Activo).ToList();
+            return PartialView("Partials/_EditarEventoModal", evento);
+        }
+
+        // AJAX EDITAR
+        [HttpPost]
+        public IActionResult EditarEventoAjax([FromBody] SafetyEvent model)
+        {
+            _context.SafetyEvents.Update(model);
+            _context.SaveChanges();
+
+            return Json(new
+            {
+                success = true,
+                areaNombre = _context.Areas.Find(model.AreaId)?.Nombre,
+                tipoBadge = model.Tipo switch
+                {
+                    TipoEvento.Accidente => "<span class='badge bg-danger rounded-pill'>Accidente</span>",
+                    TipoEvento.Incidente => "<span class='badge bg-warning text-dark rounded-pill'>Incidente</span>",
+                    TipoEvento.NearMiss => "<span class='badge bg-primary rounded-pill'>Near Miss</span>",
+                    _ => "<span class='badge bg-secondary rounded-pill'>Desconocido</span>"
+                }
+            });
+        }
+
+        // AJAX ELIMINAR
+        [HttpDelete]
+        public IActionResult EliminarEventoAjax(int id)
+        {
+            var evento = _context.SafetyEvents.Find(id);
+            _context.SafetyEvents.Remove(evento);
+            _context.SaveChanges();
             return Json(new { success = true });
         }
+
 
         // ================================
         //  LÓGICA DE COLORES

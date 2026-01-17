@@ -1,4 +1,8 @@
-﻿@model RHAds.Models.Safety.SafetyEvent
+﻿@using RHAds.Models.Areas
+@model RHAds.Models.Safety.SafetyEvent
+@{
+    var areas = ViewBag.Areas as List<Area>;
+}
 
 <div class="modal-header">
     <h5 class="modal-title">Registrar Evento</h5>
@@ -10,6 +14,22 @@
     <div class="mb-3">
         <label>Fecha</label>
         <input type="date" id="fecha" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Hora</label>
+        <input type="time" id="hora" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Área</label>
+        <select id="areaId" class="form-select">
+            <option value="">Seleccione área...</option>
+            @foreach (var a in areas)
+            {
+                <option value="@a.AreaId">@a.Nombre</option>
+            }
+        </select>
     </div>
 
     <div class="mb-3">
