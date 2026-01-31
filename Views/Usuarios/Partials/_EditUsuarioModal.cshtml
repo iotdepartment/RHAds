@@ -1,0 +1,119 @@
+﻿@* Partials/_EditUsuarioModal.cshtml *@
+<div class="modal fade" id="modalUsuario" tabindex="-1" aria-labelledby="modalUsuarioLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="modalUsuarioTitle">Editar Usuario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            <div class="modal-body">
+                <input type="hidden" id="usuarioId" />
+
+                <div class="mb-3">
+                    <label for="usuarioNombre" class="form-label">Nombre</label>
+                    <input type="text" class="form-control" id="usuarioNombre" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="usuarioEmail" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="usuarioEmail" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="usuarioPassword" class="form-label">Contraseña</label>
+                    <input type="password" class="form-control" id="usuarioPassword" />
+                    <small class="text-muted">Deja vacío si no deseas cambiar la contraseña</small>
+                </div>
+                <div class="mb-3">
+                    <label for="usuarioAreaId" class="form-label">Área</label>
+                    <select class="form-select" id="usuarioAreaId" name="AreaId" required>
+                        <option value="" disabled selected>-- Selecciona un área --</option>
+                        @foreach (var area in ViewBag.Areas as List<RHAds.Models.Areas.Area>)
+                        {
+                            <option value="@area.AreaId">@area.Nombre</option>
+                        }
+                    </select>
+                    <div class="invalid-feedback">Debes seleccionar un área.</div>
+                </div>
+
+
+
+                <div class="mb-3">
+                    <label for="usuarioRol" class="form-label">Rol</label>
+                    <select class="form-select" id="usuarioRol" required>
+                        <option value="" disabled selected>-- Selecciona un rol --</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Administrativo">Administrativo</option>
+                        <option value="Produccion">Producción</option>
+                    </select>
+                    <div class="invalid-feedback">Debes seleccionar un rol.</div>
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning rounded-pill" onclick="guardarUsuario()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Abrir modal y cargar datos (excepto contraseña)
+    async function openEditUsuario(id) {
+        const resp = await fetch('/Usuarios/GetUsuario?id=' + id);
+        const usuario = await resp.json();
+
+        document.getElementById("usuarioId").value = usuario.usuarioId;
+        document.getElementById("usuarioNombre").value = usuario.nombre;
+        document.getElementById("usuarioEmail").value = usuario.email;
+        document.getElementById("usuarioPassword").value = ""; // 👈 siempre vacío
+        document.getElementById("usuarioAreaId").value = usuario.areaId;
+        document.getElementById("usuarioRol").value = usuario.rol;
+
+        new bootstrap.Modal(document.getElementById("modalUsuario")).show();
+    }
+
+      async function guardarUsuario() {
+        const data = {
+            usuarioId: document.getElementById("usuarioId").value,
+            nombre: document.getElementById("usuarioNombre").value,
+            email: document.getElementById("usuarioEmail").value,
+            areaId: document.getElementById("usuarioAreaId").value,
+            rol: document.getElementById("usuarioRol").value
+        };
+
+        // 👇 Solo agregamos passwordPlain si el campo no está vacío
+        const password = document.getElementById("usuarioPassword").value;
+        if (password && password.trim() !== "") {
+            data.passwordPlain = password;
+        }
+
+        try {
+            const resp = await fetch('/Usuarios/EditUsuario', {
+                method: 'POST',
+                body: new URLSearchParams(data)
+            });
+
+            const result = await resp.json();
+
+            if (result.success) {
+                bootstrap.Modal.getInstance(document.getElementById("modalUsuario")).hide();
+                showToast(result.message, "success");
+
+                const table = $('#tablaUsuarios').DataTable();
+                const row = document.querySelector(`tr[data-id="${data.usuarioId}"]`);
+                if (row) {
+                    table.row(row).data(result.usuario).draw(false);
+                }
+            } else {
+                showToast(result.message, "error");
+            }
+        } catch (err) {
+            showToast("Error de conexión con el servidor", "error");
+        }
+    }
+</script>

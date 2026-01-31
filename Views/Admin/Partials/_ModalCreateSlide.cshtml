@@ -1,4 +1,4 @@
-﻿
+﻿@using RHAds.Models.Areas
 
 <div class="modal fade" id="modalCreateSlide" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -28,6 +28,24 @@
                     <label class="form-check-label">Activo</label>
                 </div>
 
+                <!-- NUEVO: Es Global -->
+                <div class="form-check mb-3">
+                    <input id="slideEsGlobal" type="checkbox" class="form-check-input">
+                    <label class="form-check-label">Es Global</label>
+                </div>
+
+                <!-- NUEVO: Área destino -->
+                <div class="mb-3">
+                    <label class="form-label">Área destino</label>
+                    <select id="slideAreaDestinoId" class="form-select">
+                        <option value="">-- Selecciona un área --</option>
+                        @foreach (var area in (ViewBag.Areas as List<Area>))
+                        {
+                            <option value="@area.AreaId">@area.Nombre</option>
+                        }
+                    </select>
+                </div>
+
             </div>
 
             <div class="modal-footer">
@@ -41,12 +59,15 @@
 
 <script>
     async function guardarSlide() {
-
         const data = {
             areaId: parseInt(document.getElementById("slideAreaId").value),
             titulo: document.getElementById("slideTitulo").value,
             orden: parseInt(document.getElementById("slideOrden").value),
-            activo: document.getElementById("slideActivo").checked
+            activo: document.getElementById("slideActivo").checked,
+            esGlobal: document.getElementById("slideEsGlobal").checked,
+            areaDestinoId: document.getElementById("slideAreaDestinoId").value
+                ? parseInt(document.getElementById("slideAreaDestinoId").value)
+                : null
         };
 
         const resp = await fetch('/Admin/CreateSlideFetch', {
@@ -60,11 +81,9 @@
         if (resp.ok) {
             alert(result.message);
 
-            // Cerrar modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('modalCreateSlide'));
             modal.hide();
 
-            // Recargar tabla
             location.reload();
         } else {
             alert("Error: " + result.message);

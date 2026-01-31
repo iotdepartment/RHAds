@@ -1,0 +1,19 @@
+﻿@* Partials/_DeleteUsuarioModal.cshtml *@
+<div class="modal fade" id="modalDeleteUsuario" tabindex="-1" aria-labelledby="modalDeleteUsuarioLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalDeleteUsuarioLabel">Eliminar Usuario</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Seguro que deseas eliminar al usuario <strong id="deleteUsuarioName"></strong>?</p>
+                <input type="hidden" id="deleteUsuarioId" />
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger rounded-pill" onclick="confirmDeleteUsuario()">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>

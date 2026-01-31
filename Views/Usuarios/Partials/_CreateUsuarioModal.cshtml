@@ -1,0 +1,105 @@
+﻿@using RHAds.Models.Areas
+
+<div class="modal fade" id="modalCreateUsuario" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Crear Usuario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="createUsuarioForm" novalidate>
+                    <div class="mb-3">
+                        <label class="form-label">Nombre</label>
+                        <input id="createNombre" type="text" class="form-control" required />
+                        <div class="invalid-feedback">El nombre es obligatorio.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input id="createEmail" type="email" class="form-control" required />
+                        <div class="invalid-feedback">Ingresa un email válido.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Contraseña</label>
+                        <input id="createPassword" type="password" class="form-control" minlength="6" required />
+                        <div class="invalid-feedback">La contraseña debe tener al menos 6 caracteres.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Área</label>
+                        <select id="createAreaId" class="form-select" required>
+                            <option value="" disabled>-- Selecciona un área --</option>
+                            @foreach (var area in ViewBag.Areas as List<Area>)
+                            {
+                                <option value="@area.AreaId">@area.Nombre</option>
+                            }
+                        </select>
+                        <div class="invalid-feedback">Debes seleccionar un área.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Rol</label>
+                        <select id="createRol" class="form-select" required>
+                            <option value="" disabled selected>-- Selecciona un rol --</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Administrativo">Administrativo</option>
+                            <option value="Produccion">Producción</option>
+                        </select>
+                        <div class="invalid-feedback">Debes seleccionar un rol.</div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-primary" onclick="guardarNuevoUsuario()">Guardar</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+    <script>
+             async function guardarNuevoUsuario() {
+        const form = document.getElementById("createUsuarioForm");
+        if (!form.checkValidity()) {
+            form.classList.add("was-validated");
+            return;
+        }
+
+        const data = {
+            nombre: document.getElementById("createNombre").value,
+            email: document.getElementById("createEmail").value,
+            passwordPlain: document.getElementById("createPassword").value,
+            areaId: document.getElementById("createAreaId").value,
+            rol: document.getElementById("createRol").value
+        };
+
+        try {
+            const resp = await fetch('/Usuarios/SaveUsuario', {
+                method: 'POST',
+                body: new URLSearchParams(data)
+            });
+
+            const result = await resp.json();
+
+            if (result.success) {
+                bootstrap.Modal.getInstance(document.getElementById("modalCreateUsuario")).hide();
+
+                // Guardar mensaje en localStorage antes de recargar
+                localStorage.setItem("toastMessage", result.message || "Usuario guardado correctamente");
+                localStorage.setItem("toastType", "success");
+
+                location.reload();
+            } else {
+                showToast(result.message || "Error al guardar el usuario", "error");
+            }
+        } catch (err) {
+            showToast("Error de conexión con el servidor", "error");
+        }
+    }
+    </script>

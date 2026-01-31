@@ -116,8 +116,38 @@
                  style="color:white; font-size:2rem; font-weight:bold;">
                 @Model.Nombre
             </div>
-
         </div>
+
+        <!-- SLIDES GLOBALES (RH y EHS) -->
+        @foreach (Slide slide in ViewBag.SlidesGlobales)
+        {
+            <div class="grid-stack-item"
+                 data-gs-id="global-@slide.SlideId"
+                 gs-x="@(slide.AreaDestinoId == 4 ? 0 : 2)"
+                 gs-y="8"
+                 gs-w="2"
+                 gs-h="4"
+                 data-gs-no-move="true"
+                 data-gs-no-resize="true">
+
+                <div class="grid-stack-item-content"
+                     style="cursor:pointer;"
+                     onclick="window.location='/Admin/Fullscreen?areaId=@slide.AreaDestinoId'">
+
+                    <div class="slide-title w-100 text-center"
+                         style="background:@slide.ColorCabecera;">
+                        @slide.Titulo
+                    </div>
+
+                    <div class="carousel-area d-flex justify-content-center align-items-center">
+                        <div class="carousel-wrapper w-100 h-100">
+                            @await Html.PartialAsync("_SlideCarousel", slide)
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        }
 
         <!-- SLIDES -->
         @foreach (var layout in Model.SlideLayouts.Where(x => x.Slide.Activo))

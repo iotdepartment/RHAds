@@ -1,16 +1,24 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RHAds.Data;
+using RHAds.Helpers;
 using RHAds.Models.Areas;
+
+
 namespace RHAds.Controllers
 {
+    [Authorize]
     public class AdminController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly IWebHostEnvironment _env;
 
-        public AdminController(AppDbContext context)
+
+        public AdminController(AppDbContext context, IWebHostEnvironment env)
         {
             _context = context;
+            _env = env;
         }
 
         // PANEL
@@ -36,7 +44,13 @@ namespace RHAds.Controllers
             _context.Areas.Add(model);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Área creada correctamente." });
+            string html = await this.RenderViewAsync("Partials/_AreaRow", model, true);
+
+            return Ok(new
+            {
+                message = "Área creada correctamente.",
+                html = html
+            });
         }
 
         [HttpGet]
@@ -72,13 +86,64 @@ namespace RHAds.Controllers
 
             return Ok(new { message = "Estado actualizado." });
         }
+        [HttpPost]
+        public IActionResult DeleteArea([FromBody] AreaDeleteRequest req)
+        {
+            var area = _context.Areas
+                .Include(a => a.Slides)
+                    .ThenInclude(s => s.SlideImages)
+                .FirstOrDefault(a => a.AreaId == req.Id);
+
+            if (area == null)
+                return Ok(new { success = false, message = "Área no encontrada" });
+
+            // Validar si hay usuarios asociados a esta área
+            bool tieneUsuarios = _context.Usuarios.Any(u => u.AreaId == req.Id);
+
+            if (tieneUsuarios)
+                return Ok(new { success = false, message = "No se puede borrar el área porque tiene usuarios asociados" });
+
+            // Eliminar archivos físicos de cada imagen de los slides
+            foreach (var slide in area.Slides)
+            {
+                foreach (var image in slide.SlideImages)
+                {
+                    if (!string.IsNullOrEmpty(image.RutaImagen))
+                    {
+                        var fullPath = Path.Combine(_env.WebRootPath, "uploads", image.RutaImagen);
+                        if (System.IO.File.Exists(fullPath))
+                        {
+                            System.IO.File.Delete(fullPath);
+                        }
+                    }
+                }
+            }
+
+            // EF se encargará del cascade delete en la base para Slides e Imágenes
+            _context.Areas.Remove(area);
+            _context.SaveChanges();
+
+            return Ok(new { success = true, message = "Área eliminada correctamente" });
+        }
+
+
+        public class AreaDeleteRequest
+        {
+            public int Id { get; set; }
+        }
+
 
         // LISTA DE SLIDES
-        public async Task<IActionResult> Slides(int areaId)
+        public IActionResult Slides(int areaId)
         {
-            var area = await _context.Areas
+            var area = _context.Areas
                 .Include(a => a.Slides)
-                .FirstOrDefaultAsync(a => a.AreaId == areaId);
+                .FirstOrDefault(a => a.AreaId == areaId);
+
+            if (area == null)
+                return NotFound();
+
+            ViewBag.Areas = _context.Areas.ToList(); // ← importante
 
             return View(area);
         }
@@ -97,23 +162,26 @@ namespace RHAds.Controllers
             if (string.IsNullOrWhiteSpace(model.Titulo))
                 return BadRequest(new { message = "El título es obligatorio." });
 
-            // Guardar slide
             _context.Slides.Add(model);
             await _context.SaveChangesAsync();
+            ViewBag.Areas = _context.Areas.ToList();
 
-            // Crear layout inicial
-            var layout = new SlideLayout
+            // Solo crear layout si NO es global
+            if (!model.EsGlobal)
             {
-                SlideId = model.SlideId,
-                AreaId = model.AreaId,
-                X = 0,
-                Y = 10,   // posición segura
-                Width = 2,
-                Height = 2
-            };
+                var layout = new SlideLayout
+                {
+                    SlideId = model.SlideId,
+                    AreaId = model.AreaId,
+                    X = 0,
+                    Y = 10,
+                    Width = 2,
+                    Height = 2
+                };
 
-            _context.SlideLayouts.Add(layout);
-            await _context.SaveChangesAsync();
+                _context.SlideLayouts.Add(layout);
+                await _context.SaveChangesAsync();
+            }
 
             return Ok(new { message = "Slide creado correctamente." });
         }
@@ -270,6 +338,8 @@ namespace RHAds.Controllers
             return Ok(new { message = "Estado actualizado." });
         }
 
+
+
         [HttpGet]
         public IActionResult Fullscreen(int areaId)
         {
@@ -278,6 +348,18 @@ namespace RHAds.Controllers
                     .ThenInclude(sl => sl.Slide)
                         .ThenInclude(s => s.SlideImages)
                 .FirstOrDefault(a => a.AreaId == areaId);
+
+            if (area == null)
+                return NotFound();
+
+            // Cargar slides globales (RH y EHS)
+            var slidesGlobales = _context.Slides
+                .Where(s => s.EsGlobal)
+                .Include(s => s.SlideImages)
+                .ToList();
+
+            // Enviar a la vista
+            ViewBag.SlidesGlobales = slidesGlobales;
 
             return View(area);
         }
@@ -295,7 +377,15 @@ namespace RHAds.Controllers
             if (area == null)
                 return NotFound();
 
-            return View("EditorLayout", area); // ← Nombre de la vista
+            // Cargar slides globales (RH y EHS)
+            var slidesGlobales = _context.Slides
+                .Where(s => s.EsGlobal)
+                .Include(s => s.SlideImages)
+                .ToList();
+
+            ViewBag.SlidesGlobales = slidesGlobales;
+
+            return View("EditorLayout", area);
         }
 
         [HttpPost]

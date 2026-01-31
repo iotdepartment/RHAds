@@ -5,8 +5,7 @@
 @{
     ViewData["Title"] = "Slides";
 }
-
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 
 <h2>Slides del Área: @Model.Nombre</h2>
@@ -22,6 +21,8 @@
             <th class="text-center">Orden</th>
             <th class="text-center">Activo</th>
             <th class="text-center">Color</th>
+            <th class="text-center">Global</th>
+            <th class="text-center">Area Destino</th>
             <th class="text-center">Actions</th>
 
         </tr>
@@ -41,17 +42,27 @@
                     </div>
                 </td>
 
-              
                 <!-- SELECTOR DE COLOR -->
                 <td>
-                <div>
-                    <input type="color"
-                           class="form-control form-control-color color-picker"
-                           data-slide-id="@s.SlideId"
-                           value="@s.ColorCabecera"
-                           title="Selecciona un color" />
-                </div>
+                    <div>
+                        <input type="color"
+                               class="form-control form-control-color color-picker"
+                               data-slide-id="@s.SlideId"
+                               value="@s.ColorCabecera"
+                               title="Selecciona un color" />
+                    </div>
                 </td>
+
+                <!-- NUEVO: Es Global -->
+                <td>
+                    @(s.EsGlobal ? "Sí" : "No")
+                </td>
+
+                <!-- NUEVO: Área Destino -->
+                <td>
+                    @(s.AreaDestino != null ? s.AreaDestino.Nombre : "-")
+                </td>
+
                 <td>
                     <a href="/Admin/Fullscreen?areaId=@Model.AreaId"
                        class="btn btn-dark btn-sm rounded-pill" target="_blank" title="Fullscreen">
@@ -61,20 +72,24 @@
                         <i class="bi bi-card-image"></i>
                     </a>
                 </td>
-
             </tr>
         }
     </tbody>
 </table>
+
 @await Html.PartialAsync("Partials/_ModalCreateSlide", Model.AreaId)
 
 @section Scripts{
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
     <script>
-        new DataTable('#tablaSlides', {
-            searching: false
-        } );
+
+    new DataTable('#tablaSlides', {
+            searching: false,
+            paging: true,
+            info: true
+    });
+
         // Delegación de eventos para que funcione incluso cuando DataTables re-renderiza
         document.addEventListener("change", function (e) {
             if (e.target.classList.contains("toggle-activo")) {

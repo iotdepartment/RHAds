@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RHAds.Data;
 
@@ -11,9 +12,11 @@ using RHAds.Data;
 namespace RHAds.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260129061212_AddUsuariosAreasSlidesRelations")]
+    partial class AddUsuariosAreasSlidesRelations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -223,9 +226,8 @@ namespace RHAds.Migrations
             modelBuilder.Entity("RHAds.Models.Safety.SafetyEvent", b =>
                 {
                     b.HasOne("RHAds.Models.Areas.Area", "Area")
-                        .WithMany("SafetyEvents")
-                        .HasForeignKey("AreaId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .WithMany()
+                        .HasForeignKey("AreaId");
 
                     b.Navigation("Area");
                 });
@@ -279,9 +281,9 @@ namespace RHAds.Migrations
                         .IsRequired();
 
                     b.HasOne("Slide", "Slide")
-                        .WithMany("SlideLayouts")
+                        .WithMany()
                         .HasForeignKey("SlideId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Area");
@@ -291,8 +293,6 @@ namespace RHAds.Migrations
 
             modelBuilder.Entity("RHAds.Models.Areas.Area", b =>
                 {
-                    b.Navigation("SafetyEvents");
-
                     b.Navigation("SlideLayouts");
 
                     b.Navigation("Slides");
@@ -303,8 +303,6 @@ namespace RHAds.Migrations
             modelBuilder.Entity("Slide", b =>
                 {
                     b.Navigation("SlideImages");
-
-                    b.Navigation("SlideLayouts");
                 });
 #pragma warning restore 612, 618
         }

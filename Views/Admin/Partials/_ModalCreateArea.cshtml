@@ -11,7 +11,7 @@
             <div class="modal-body">
 
                 <div class="mb-3">
-                    <label class="form-label">Nombre</label>
+                    <label class="form-label">Area</label>
                     <input id="areaNombre" class="form-control" placeholder="Nombre del área">
                 </div>
 
@@ -35,35 +35,3 @@
         </div>
     </div>
 </div>
-
-<script>
-    async function guardarArea() {
-
-        const data = {
-            nombre: document.getElementById("areaNombre").value,
-            descripcion: document.getElementById("areaDescripcion").value,
-            activo: document.getElementById("areaActivo").checked
-        };
-
-        const resp = await fetch('/Admin/CreateAreaFetch', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-
-        const result = await resp.json();
-
-        if (resp.ok) {
-            alert(result.message);
-
-            // Cerrar modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('modalCreateArea'));
-            modal.hide();
-
-            // Recargar tabla
-            location.reload();
-        } else {
-            alert("Error: " + result.message);
-        }
-    }
-</script>

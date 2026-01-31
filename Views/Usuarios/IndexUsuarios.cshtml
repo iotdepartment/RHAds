@@ -1,0 +1,156 @@
+﻿@model IEnumerable<RHAds.Models.Usuarios.Usuario>
+
+@{
+    ViewData["Title"] = "Usuarios";
+}
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between mb-3">
+        <h3>Usuarios</h3>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCreateUsuario">
+            <i class="bi bi-person-plus"></i> Crear Usuario
+        </button>
+    </div>
+
+    <table id="tablaUsuarios" class="table table-striped table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Área</th>
+                <th>Rol</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var u in Model)
+            {
+                <tr data-id="@u.UsuarioId">
+                    <td>@u.Nombre</td>
+                    <td>@u.Email</td>
+                    <td>@u.Area?.Nombre</td>
+                    <td>@u.Rol</td>
+                    <td class="text-center">
+                        <button class="btn btn-warning btn-sm rounded-pill" onclick="openEditUsuario(@u.UsuarioId)">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <button class="btn btn-danger btn-sm rounded-pill"
+                                onclick="openDeleteUsuario(@u.UsuarioId, '@u.Nombre')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@* Modales *@
+@await Html.PartialAsync("Partials/_CreateUsuarioModal")
+@await Html.PartialAsync("Partials/_DeleteUsuarioModal")
+@await Html.PartialAsync("Partials/_EditUsuarioModal")
+
+@section Scripts {
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    <script>
+        // Inicializar DataTable solo para estilos/paginación
+        $(document).ready(function () {
+            $('#tablaUsuarios').DataTable();
+        });
+
+        // Abrir modal de eliminación
+        function openDeleteUsuario(id, nombre) {
+            document.getElementById("deleteUsuarioId").value = id;
+            document.getElementById("deleteUsuarioName").innerText = nombre;
+            new bootstrap.Modal(document.getElementById("modalDeleteUsuario")).show();
+        }
+
+        // Confirmar eliminación
+        async function confirmDeleteUsuario() {
+            const id = document.getElementById("deleteUsuarioId").value;
+
+            try {
+                const resp = await fetch('/Usuarios/DeleteUsuario?id=' + id, { method: 'POST' });
+                const result = await resp.json();
+
+                if (result.success) {
+                    bootstrap.Modal.getInstance(document.getElementById("modalDeleteUsuario")).hide();
+                    showToast(result.message || "Usuario eliminado correctamente", "success");
+
+                    const table = $('#tablaUsuarios').DataTable();
+                    const row = document.querySelector(`tr[data-id="${id}"]`);
+                    if (row) {
+                        table.row(row).remove().draw();
+                    }
+                } else {
+                    showToast(result.message || "Error al eliminar el usuario", "error");
+                }
+            } catch (err) {
+                showToast("Error de conexión con el servidor", "error");
+            }
+        }
+
+        // Abrir modal de edición
+        async function openEditUsuario(id) {
+            const resp = await fetch('/Usuarios/GetUsuario?id=' + id);
+            const usuario = await resp.json();
+
+            document.getElementById("modalUsuarioTitle").innerText = "Editar Usuario";
+            document.getElementById("usuarioId").value = usuario.usuarioId;
+            document.getElementById("usuarioNombre").value = usuario.nombre;
+            document.getElementById("usuarioEmail").value = usuario.email;
+            document.getElementById("usuarioPassword").value = "";
+            document.getElementById("usuarioAreaId").value = usuario.areaId;
+            document.getElementById("usuarioRol").value = usuario.rol;
+
+            new bootstrap.Modal(document.getElementById("modalUsuario")).show();
+        }
+
+        // Guardar cambios de edición
+        async function guardarUsuario() {
+            const data = {
+                usuarioId: document.getElementById("usuarioId").value,
+                nombre: document.getElementById("usuarioNombre").value,
+                email: document.getElementById("usuarioEmail").value,
+                areaId: document.getElementById("usuarioAreaId").value,
+                rol: document.getElementById("usuarioRol").value
+            };
+
+            const password = document.getElementById("usuarioPassword").value;
+            if (password && password.trim() !== "") {
+                data.passwordPlain = password;
+            }
+
+            try {
+                const resp = await fetch('/Usuarios/EditUsuario', {
+                    method: 'POST',
+                    body: new URLSearchParams(data)
+                });
+
+                const result = await resp.json();
+
+                if (result.success) {
+                    bootstrap.Modal.getInstance(document.getElementById("modalUsuario")).hide();
+                    showToast(result.message, "success");
+
+                    // ✅ Actualizar las celdas manualmente
+                    const row = document.querySelector(`tr[data-id="${data.usuarioId}"]`);
+                    if (row) {
+                        row.querySelector("td:nth-child(1)").innerText = result.usuario.nombre;
+                        row.querySelector("td:nth-child(2)").innerText = result.usuario.email;
+                        row.querySelector("td:nth-child(3)").innerText = result.usuario.areaNombre;
+                        row.querySelector("td:nth-child(4)").innerText = result.usuario.rol;
+                    }
+                } else {
+                    showToast(result.message, "error");
+                }
+            } catch (err) {
+                showToast("Error de conexión con el servidor", "error");
+            }
+        }
+    </script>
+}

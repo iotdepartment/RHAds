@@ -1,4 +1,5 @@
-﻿<div class="modal fade" id="modalEditArea" tabindex="-1" aria-hidden="true">
+﻿<!-- Modal Editar Área -->
+<div class="modal fade" id="modalEditArea" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
 
@@ -30,6 +31,49 @@
     </div>
 </div>
 
-@section Scripts {
-    
-}
+<script>
+
+    /* ============================
+       GUARDAR EDICIÓN DE ÁREA
+    ============================ */
+         async function guardarEdicionArea() {
+        const areaId = document.getElementById("editAreaId").value;
+        const nombre = document.getElementById("editNombre").value;
+        const descripcion = document.getElementById("editDescripcion").value;
+
+        const formData = new FormData();
+        formData.append("areaId", areaId);
+        formData.append("nombre", nombre);
+        formData.append("descripcion", descripcion);
+
+        try {
+            const resp = await fetch('/Admin/EditArea', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await resp.json();
+
+            if (!resp.ok) {
+                showToast(result.message || "Error al actualizar el área", "error");
+                return;
+            }
+
+            // Cerrar modal
+            bootstrap.Modal.getInstance(document.getElementById('modalEditArea')).hide();
+
+            // Toast éxito
+            showToast(result.message || "Área actualizada correctamente", "success");
+
+            // ✅ Actualizar fila en DataTable usando areaId
+            const fila = tablaAreas.row(`[data-id="${areaId}"]`);
+            fila.cell(fila.index(), 0).data(`<span class="text-center d-block">${nombre}</span>`);
+            fila.cell(fila.index(), 1).data(`<span class="text-center d-block">${descripcion}</span>`);
+            fila.draw(false);
+
+        } catch (err) {
+            showToast("Error de conexión con el servidor", "error");
+        }
+    }
+
+</script>

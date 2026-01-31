@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RHAds.Data;
 
@@ -11,9 +12,11 @@ using RHAds.Data;
 namespace RHAds.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260128053949_AddSlidesGlobales")]
+    partial class AddSlidesGlobales
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -36,9 +39,6 @@ namespace RHAds.Migrations
                     b.Property<string>("Descripcion")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("EsInstitucional")
-                        .HasColumnType("bit");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
@@ -74,40 +74,6 @@ namespace RHAds.Migrations
                     b.HasIndex("AreaId");
 
                     b.ToTable("SafetyEvents");
-                });
-
-            modelBuilder.Entity("RHAds.Models.Usuarios.Usuario", b =>
-                {
-                    b.Property<int>("UsuarioId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UsuarioId"));
-
-                    b.Property<int>("AreaId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Rol")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("UsuarioId");
-
-                    b.HasIndex("AreaId");
-
-                    b.ToTable("Usuarios");
                 });
 
             modelBuilder.Entity("Slide", b =>
@@ -223,20 +189,8 @@ namespace RHAds.Migrations
             modelBuilder.Entity("RHAds.Models.Safety.SafetyEvent", b =>
                 {
                     b.HasOne("RHAds.Models.Areas.Area", "Area")
-                        .WithMany("SafetyEvents")
-                        .HasForeignKey("AreaId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.Navigation("Area");
-                });
-
-            modelBuilder.Entity("RHAds.Models.Usuarios.Usuario", b =>
-                {
-                    b.HasOne("RHAds.Models.Areas.Area", "Area")
-                        .WithMany("Usuarios")
-                        .HasForeignKey("AreaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .WithMany()
+                        .HasForeignKey("AreaId");
 
                     b.Navigation("Area");
                 });
@@ -245,8 +199,7 @@ namespace RHAds.Migrations
                 {
                     b.HasOne("RHAds.Models.Areas.Area", "AreaDestino")
                         .WithMany()
-                        .HasForeignKey("AreaDestinoId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("AreaDestinoId");
 
                     b.HasOne("RHAds.Models.Areas.Area", "Area")
                         .WithMany("Slides")
@@ -279,9 +232,9 @@ namespace RHAds.Migrations
                         .IsRequired();
 
                     b.HasOne("Slide", "Slide")
-                        .WithMany("SlideLayouts")
+                        .WithMany()
                         .HasForeignKey("SlideId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Area");
@@ -291,20 +244,14 @@ namespace RHAds.Migrations
 
             modelBuilder.Entity("RHAds.Models.Areas.Area", b =>
                 {
-                    b.Navigation("SafetyEvents");
-
                     b.Navigation("SlideLayouts");
 
                     b.Navigation("Slides");
-
-                    b.Navigation("Usuarios");
                 });
 
             modelBuilder.Entity("Slide", b =>
                 {
                     b.Navigation("SlideImages");
-
-                    b.Navigation("SlideLayouts");
                 });
 #pragma warning restore 612, 618
         }

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RHAds.Data;
 
@@ -11,9 +12,11 @@ using RHAds.Data;
 namespace RHAds.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260130222249_AddSlideLayoutsToSlide")]
+    partial class AddSlideLayoutsToSlide
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -223,9 +226,8 @@ namespace RHAds.Migrations
             modelBuilder.Entity("RHAds.Models.Safety.SafetyEvent", b =>
                 {
                     b.HasOne("RHAds.Models.Areas.Area", "Area")
-                        .WithMany("SafetyEvents")
-                        .HasForeignKey("AreaId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .WithMany()
+                        .HasForeignKey("AreaId");
 
                     b.Navigation("Area");
                 });
@@ -291,8 +293,6 @@ namespace RHAds.Migrations
 
             modelBuilder.Entity("RHAds.Models.Areas.Area", b =>
                 {
-                    b.Navigation("SafetyEvents");
-
                     b.Navigation("SlideLayouts");
 
                     b.Navigation("Slides");
