@@ -2,8 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RHAds.Data;
+using RHAds.DTOs.Slides;
 using RHAds.Helpers;
 using RHAds.Models.Areas;
+using RHAds.ViewModels;
 
 
 namespace RHAds.Controllers
@@ -15,11 +17,11 @@ namespace RHAds.Controllers
         private readonly IWebHostEnvironment _env;
 
 
-        public AdminController(AppDbContext context, IWebHostEnvironment env)
-        {
-            _context = context;
-            _env = env;
-        }
+    public AdminController(AppDbContext context, IWebHostEnvironment env)
+    {
+        _context = context;
+        _env = env;
+    }
 
         // PANEL
         public IActionResult Menu()
@@ -27,65 +29,138 @@ namespace RHAds.Controllers
             return View();
         }
 
-        // LISTA DE ÁREAS
-        public async Task<IActionResult> Areas()
+        // Vista principal de Áreas
+        public IActionResult Areas()
         {
-            var areas = await _context.Areas.ToListAsync();
-            return View(areas);
+            return View();
         }
 
-        // CREAR ÁREA (FETCH)
-        [HttpPost]
-        public async Task<IActionResult> CreateAreaFetch([FromBody] Area model)
+        // API para DataTables
+        [HttpGet]
+        public async Task<IActionResult> GetAreas()
         {
-            if (string.IsNullOrWhiteSpace(model.Nombre))
-                return BadRequest(new { message = "El nombre es obligatorio." });
+            var areas = await _context.Areas
+                .Select(a => new {
+                    areaId = a.AreaId,
+                    nombre = a.Nombre,
+                    descripcion = a.Descripcion,
+                    activo = a.Activo,
+                    esInstitucional = a.EsInstitucional
+                })
+                .ToListAsync();
 
-            _context.Areas.Add(model);
-            await _context.SaveChangesAsync();
-
-            string html = await this.RenderViewAsync("Partials/_AreaRow", model, true);
-
-            return Ok(new
-            {
-                message = "Área creada correctamente.",
-                html = html
-            });
+            return Json(new { data = areas });
         }
 
+        // Obtener un área puntual
         [HttpGet]
         public async Task<IActionResult> GetArea(int id)
         {
             var area = await _context.Areas.FirstOrDefaultAsync(x => x.AreaId == id);
-            if (area == null) return NotFound();
+            if (area == null)
+                return Ok(new { success = false, message = "Área no encontrada" });
 
-            return Json(new { area.AreaId, area.Nombre, area.Descripcion });
+            return Ok(new {
+                success = true,
+                areaId = area.AreaId,
+                nombre = area.Nombre,
+                descripcion = area.Descripcion,
+                esInstitucional = area.EsInstitucional
+            });
         }
 
+        // Crear área con slide global si es institucional
         [HttpPost]
-        public async Task<IActionResult> EditArea(int areaId, string nombre, string descripcion)
+        public async Task<IActionResult> CreateAreaFetch([FromBody] Area model)
         {
-            var area = await _context.Areas.FirstOrDefaultAsync(x => x.AreaId == areaId);
-            if (area == null) return BadRequest(new { message = "Área no encontrada." });
+            if (string.IsNullOrWhiteSpace(model.Nombre))
+                return BadRequest(new { success = false, message = "El nombre es obligatorio." });
 
-            area.Nombre = nombre;
-            area.Descripcion = descripcion;
-
+            _context.Areas.Add(model);
             await _context.SaveChangesAsync();
-            return Ok(new { message = "Área actualizada correctamente." });
+
+            if (model.EsInstitucional)
+            {
+                var slide = new Slide
+                {
+                    AreaId = model.AreaId,
+                    Titulo = $"Slide Global {model.Nombre}",
+                    Orden = await _context.Slides.MaxAsync(s => (int?)s.Orden) + 1 ?? 1,
+                    Activo = true,
+                    EsGlobal = true,
+                    ColorCabecera = "#000000",
+                    AreaDestinoId = model.AreaId
+                };
+
+                _context.Slides.Add(slide);
+                await _context.SaveChangesAsync();
+
+                var layout = new SlideLayout
+                {
+                    SlideId = slide.SlideId,
+                    AreaId = model.AreaId,
+                    X = 0,
+                    Y = 0,
+                    Width = 2,
+                    Height = 2
+                };
+
+                _context.SlideLayouts.Add(layout);
+                await _context.SaveChangesAsync();
+            }
+
+            return Ok(new { success = true, message = "Área creada correctamente." });
         }
 
+        // Editar área
+        [HttpPost]
+        public async Task<IActionResult> EditArea([FromBody] AreaEditRequest req)
+        {
+            var area = await _context.Areas
+                .Include(a => a.Slides)
+                .FirstOrDefaultAsync(x => x.AreaId == req.AreaId);
+
+            if (area == null)
+                return BadRequest(new { success = false, message = "Área no encontrada." });
+
+            area.Nombre = req.Nombre;
+            area.Descripcion = req.Descripcion;
+            await _context.SaveChangesAsync();
+
+            if (area.EsInstitucional && !area.Slides.Any(s => s.EsGlobal))
+            {
+                var slide = new Slide
+                {
+                    AreaId = area.AreaId,
+                    Titulo = "Slide Institucional",
+                    Orden = await _context.Slides.MaxAsync(s => (int?)s.Orden) + 1 ?? 1,
+                    Activo = true,
+                    EsGlobal = true,
+                    ColorCabecera = "#000000",
+                    AreaDestinoId = area.AreaId
+                };
+
+                _context.Slides.Add(slide);
+                await _context.SaveChangesAsync();
+            }
+
+            return Ok(new { success = true, message = "Área actualizada correctamente." });
+        }
+
+        // Actualizar estado activo
         [HttpPost]
         public async Task<IActionResult> UpdateAreaActivo([FromBody] Area model)
         {
             var area = await _context.Areas.FirstOrDefaultAsync(x => x.AreaId == model.AreaId);
-            if (area == null) return BadRequest(new { message = "Área no encontrada." });
+            if (area == null) return BadRequest(new { success = false, message = "Área no encontrada." });
 
             area.Activo = model.Activo;
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Estado actualizado." });
+            return Ok(new { success = true, message = "Estado actualizado." });
         }
+
+        // Eliminar área
         [HttpPost]
         public IActionResult DeleteArea([FromBody] AreaDeleteRequest req)
         {
@@ -97,13 +172,10 @@ namespace RHAds.Controllers
             if (area == null)
                 return Ok(new { success = false, message = "Área no encontrada" });
 
-            // Validar si hay usuarios asociados a esta área
             bool tieneUsuarios = _context.Usuarios.Any(u => u.AreaId == req.Id);
-
             if (tieneUsuarios)
                 return Ok(new { success = false, message = "No se puede borrar el área porque tiene usuarios asociados" });
 
-            // Eliminar archivos físicos de cada imagen de los slides
             foreach (var slide in area.Slides)
             {
                 foreach (var image in slide.SlideImages)
@@ -119,60 +191,120 @@ namespace RHAds.Controllers
                 }
             }
 
-            // EF se encargará del cascade delete en la base para Slides e Imágenes
             _context.Areas.Remove(area);
             _context.SaveChanges();
 
             return Ok(new { success = true, message = "Área eliminada correctamente" });
         }
 
-
+        //  DTOs auxiliares
         public class AreaDeleteRequest
         {
             public int Id { get; set; }
         }
 
+        public class AreaEditRequest
+        {
+            public int AreaId { get; set; }
+            public string Nombre { get; set; }
+            public string Descripcion { get; set; }
+        }
+
+
 
         // LISTA DE SLIDES
-        public IActionResult Slides(int areaId)
+        public async Task<IActionResult> Slides(int areaId)
         {
-            var area = _context.Areas
+            var area = await _context.Areas
                 .Include(a => a.Slides)
-                .FirstOrDefault(a => a.AreaId == areaId);
+                .FirstOrDefaultAsync(a => a.AreaId == areaId);
 
-            if (area == null)
-                return NotFound();
+            if (area == null) return NotFound();
 
-            ViewBag.Areas = _context.Areas.ToList(); // ← importante
+            var vm = new SlidesViewModel
+            {
+                Area = area,
+                AreasDestino = await _context.Areas.ToListAsync()
+            };
 
-            return View(area);
+            ViewBag.Areas = await _context.Areas
+                .Where(a => a.EsInstitucional == true)
+                .ToListAsync();
+
+            return View(vm);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetSlides(int areaId)
+        {
+            var slides = await _context.Slides
+                .Where(s => s.AreaId == areaId)
+                .Select(s => new {
+                    slideId = s.SlideId,
+                    titulo = s.Titulo,
+                    orden = s.Orden,
+                    activo = s.Activo,
+                    colorCabecera = s.ColorCabecera,
+                    esGlobal = s.EsGlobal,
+                    areaDestinoId = s.AreaDestinoId,
+                    areaDestinoNombre = s.AreaDestinoId != null
+                        ? _context.Areas.Where(a => a.AreaId == s.AreaDestinoId).Select(a => a.Nombre).FirstOrDefault()
+                        : "-"
+                })
+                .ToListAsync();
+
+            return Json(new { data = slides });
         }
 
         // CREAR SLIDE (VISTA)
-        public IActionResult CreateSlide(int areaId)
+        [HttpGet]
+        public async Task<IActionResult> CreateSlide(int areaId)
         {
             ViewBag.AreaId = areaId;
-            return View();
+            ViewBag.Areas = await _context.Areas
+                .Where(a => a.EsInstitucional == true)
+                .ToListAsync();
+
+            return PartialView(); // 👈 ya no pasamos un modelo fuerte, solo ViewBag
         }
 
         //FETCH CREAR SLIDE
         [HttpPost]
-        public async Task<IActionResult> CreateSlideFetch([FromBody] Slide model)
+        public async Task<IActionResult> CreateSlideFetch([FromBody] CreateSlideDto model)
         {
-            if (string.IsNullOrWhiteSpace(model.Titulo))
-                return BadRequest(new { message = "El título es obligatorio." });
+            if (model == null || string.IsNullOrWhiteSpace(model.Titulo))
+                return BadRequest(new { success = false, message = "El título es obligatorio." });
 
-            _context.Slides.Add(model);
+            // ✅ Validación: si es institucional, verificar que no exista otro institucional en el área
+            if (model.EsGlobal)
+            {
+                bool existeInstitucional = await _context.Slides
+                    .AnyAsync(s => s.AreaId == model.AreaId && s.EsGlobal);
+
+                if (existeInstitucional)
+                    return BadRequest(new { success = false, message = "Ya existe un slide institucional en esta área." });
+            }
+
+            var slide = new Slide
+            {
+                AreaId = model.AreaId,
+                Titulo = model.Titulo,
+                Orden = model.Orden,
+                Activo = model.Activo,
+                EsGlobal = model.EsGlobal,
+                ColorCabecera = model.ColorCabecera,
+                AreaDestinoId = model.EsGlobal ? model.AreaDestinoId : null
+            };
+
+            _context.Slides.Add(slide);
             await _context.SaveChangesAsync();
-            ViewBag.Areas = _context.Areas.ToList();
 
-            // Solo crear layout si NO es global
             if (!model.EsGlobal)
             {
                 var layout = new SlideLayout
                 {
-                    SlideId = model.SlideId,
-                    AreaId = model.AreaId,
+                    SlideId = slide.SlideId,
+                    AreaId = slide.AreaId,
                     X = 0,
                     Y = 10,
                     Width = 2,
@@ -183,8 +315,80 @@ namespace RHAds.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            return Ok(new { message = "Slide creado correctamente." });
+            var areaDestinoNombre = slide.AreaDestinoId.HasValue
+                ? (await _context.Areas.FindAsync(slide.AreaDestinoId))?.Nombre ?? "-"
+                : "-";
+
+            return Ok(new
+            {
+                success = true,
+                message = "Slide creado correctamente.",
+                slideId = slide.SlideId,
+                titulo = slide.Titulo,
+                orden = slide.Orden,
+                activo = slide.Activo,
+                colorCabecera = slide.ColorCabecera,
+                esGlobal = slide.EsGlobal,
+                areaDestinoId = slide.AreaDestinoId,
+                areaDestinoNombre = areaDestinoNombre
+            });
         }
+
+        //FETCH EDITAR SLIDE
+        [HttpPost]
+        public async Task<IActionResult> EditSlide([FromBody] EditSlideDto model)
+        {
+            var slide = await _context.Slides.FirstOrDefaultAsync(x => x.SlideId == model.SlideId);
+            if (slide == null)
+                return BadRequest(new { success = false, message = "Slide no encontrado." });
+
+            // ✅ Validación: si EsGlobal está marcado, debe tener un área destino
+            if (model.EsGlobal && (model.AreaDestinoId == null || model.AreaDestinoId == 0))
+                return BadRequest(new { success = false, message = "Debe seleccionar un área destino cuando el slide es institucional." });
+
+            // ✅ Validación: solo puede existir un institucional por área
+            if (model.EsGlobal)
+            {
+                bool existeOtroInstitucional = await _context.Slides
+                    .AnyAsync(s => s.AreaId == slide.AreaId && s.EsGlobal && s.SlideId != slide.SlideId);
+
+                if (existeOtroInstitucional)
+                    return BadRequest(new { success = false, message = "Ya existe un slide institucional en esta área." });
+            }
+
+            slide.EsGlobal = model.EsGlobal;
+            slide.Titulo = model.Titulo;
+            slide.Orden = model.Orden;
+            slide.Activo = model.Activo;
+            slide.ColorCabecera = model.ColorCabecera;
+            slide.AreaDestinoId = model.EsGlobal ? model.AreaDestinoId : null;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true, message = "Slide actualizado correctamente." });
+        }
+
+        //FETCH ELIMINAR SLIDE
+        [HttpPost]
+        public async Task<IActionResult> DeleteSlide(int slideId)
+        {
+            var slide = await _context.Slides.FindAsync(slideId);
+
+            if (slide == null)
+                return BadRequest(new { success = false, message = "Slide no encontrado." });
+
+            // 👇 Bloqueo: si es institucional/global no se puede borrar
+            if (slide.EsGlobal)
+                return BadRequest(new { success = false, message = "Este slide es institucional y no puede eliminarse." });
+
+            _context.Slides.Remove(slide);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true, message = "Slide eliminado correctamente." });
+        }
+
+
+
 
         // LISTA DE IMÁGENES
         public async Task<IActionResult> Images(int slideId)
@@ -446,7 +650,7 @@ namespace RHAds.Controllers
         {
             var slide = _context.Slides.FirstOrDefault(x => x.SlideId == dto.SlideId);
             if (slide == null)
-                return NotFound();
+                return Ok(new { success = false, message = "Slide no encontrado." });
 
             // Si se está reactivando
             if (dto.Activo && !slide.Activo)
@@ -466,7 +670,7 @@ namespace RHAds.Controllers
             slide.Activo = dto.Activo;
             _context.SaveChanges();
 
-            return Json(new { ok = true });
+            return Ok(new { success = true, message = "Estado actualizado correctamente." });
         }
         public class ToggleSlideActivoDto
         {

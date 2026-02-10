@@ -86,7 +86,6 @@
             rol: document.getElementById("usuarioRol").value
         };
 
-        // 👇 Solo agregamos passwordPlain si el campo no está vacío
         const password = document.getElementById("usuarioPassword").value;
         if (password && password.trim() !== "") {
             data.passwordPlain = password;

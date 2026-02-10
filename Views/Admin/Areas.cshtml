@@ -1,13 +1,9 @@
-﻿@using RHAds.Models.Areas
-@model IEnumerable<Area>
-
-@{
-    ViewData["Title"] = "Areas";
+﻿@{
+    ViewData["Title"] = "Áreas";
 }
 
 <h2>Áreas</h2>
 
-<!-- BOTÓN QUE ABRE EL MODAL DE CREAR -->
 <button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#modalCreateArea">
     Crear Área
 </button>
@@ -18,113 +14,147 @@
             <th class="text-center">Nombre</th>
             <th class="text-center">Descripción</th>
             <th class="text-center">Activo</th>
-            <th class="text-center">Actions</th>
-            <th class="text-center">Actions</th>
-
+            <th class="text-center">Institucional</th>
+            <th class="text-center">Slides/Layout</th>
+            <th class="text-center">Acciones</th>
         </tr>
     </thead>
-    <tbody>
-        @foreach (var a in Model)
-        {
-            <tr data-id="@a.AreaId">
-
-                <td class="text-center area-nombre">@a.Nombre</td>
-
-                <td class="text-center area-descripcion">@a.Descripcion</td>
-
-                <td class="text-center area-activo">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input"
-                               type="checkbox"
-                               onchange="toggleActivoArea(@a.AreaId, this.checked)"
-                               @(a.Activo ? "checked" : "")>
-                    </div>
-                </td>
-
-                <td class="text-center area-actions-1">
-                    <a href="/Admin/Slides?areaId=@a.AreaId" class="btn btn-primary btn-sm rounded-pill"><i class="bi bi-file-earmark-easel-fill"></i></a>
-                    <a href="/Admin/EditorLayout?areaId=@a.AreaId" class="btn btn-info btn-sm rounded-pill"><i class="bi bi-columns-gap"></i></a>
-                    <a href="/Admin/Fullscreen?areaId=@a.AreaId" class="btn btn-dark btn-sm rounded-pill" target="_blank"><i class="bi bi-fullscreen"></i></a>
-                </td>
-
-                <td class="text-center area-actions-2">
-                    <button class="btn btn-warning btn-sm rounded-pill" onclick="openEditArea(@a.AreaId)">
-                        <i class="bi bi-pencil-square"></i>
-                    </button>
-                    <button class="btn btn-danger btn-sm rounded-pill" onclick="openDeleteArea(@a.AreaId, '@a.Nombre')"><i class="bi bi-trash-fill"></i></button>
-                </td>
-
-            </tr>
-        }
-    </tbody>
+    <tbody></tbody>
 </table>
 
 <!-- PARTIALS -->
 @await Html.PartialAsync("Partials/_ModalCreateArea")
 @await Html.PartialAsync("Partials/_ModalEditArea")
 @await Html.PartialAsync("Partials/_ModalDeleteArea")
+
 @section Scripts {
+
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
     <script>
         let tablaAreas;
 
         document.addEventListener("DOMContentLoaded", function () {
-            tablaAreas = new DataTable('#tablaAreas', {
-                ordering: false
+            tablaAreas = $('#tablaAreas').DataTable({
+                ajax: '/Admin/GetAreas',
+                ordering: false,
+                columns: [
+                    { data: 'nombre', className: 'text-center' },
+                    { data: 'descripcion', className: 'text-center' },
+                    { data: 'activo', className: 'text-center', render: (d, type, row) => `
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" ${d ? "checked" : ""}
+                                   onchange="toggleActivoArea(${row.areaId}, this.checked)">
+                        </div>` },
+                    { data: 'esInstitucional', className: 'text-center', render: d => d ? "Sí" : "No" },
+                    { data: 'areaId', className: 'text-center', render: id => `
+                        <a href="/Admin/Slides?areaId=${id}" class="btn btn-primary btn-sm rounded-pill"><i class="bi bi-file-earmark-easel-fill"></i></a>
+                        <a href="/Admin/EditorLayout?areaId=${id}" class="btn btn-info btn-sm rounded-pill"><i class="bi bi-columns-gap"></i></a>
+                        <a href="/Admin/Fullscreen?areaId=${id}" class="btn btn-dark btn-sm rounded-pill" target="_blank"><i class="bi bi-fullscreen"></i></a>` },
+                    { data: 'areaId', className: 'text-center', render: id => `
+                        <button class="btn btn-warning btn-sm rounded-pill" onclick="openEditArea(${id})">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <button class="btn btn-danger btn-sm rounded-pill" onclick="openDeleteArea(${id}, 'Área')">
+                            <i class="bi bi-trash-fill"></i>
+                        </button>` }
+                ]
             });
         });
 
-        /* ============================
-           CREAR ÁREA (CORREGIDO)
+
+                /* ============================
+           CREAR ÁREA
         ============================ */
-             async function guardarArea() {
+        async function guardarArea() {
             const data = {
                 nombre: document.getElementById("areaNombre").value,
                 descripcion: document.getElementById("areaDescripcion").value,
-                activo: document.getElementById("areaActivo").checked
+                activo: document.getElementById("areaActivo").checked,
+                esInstitucional: document.getElementById("areaEsInstitucional").checked
             };
 
-            const resp = await fetch('/Admin/CreateAreaFetch', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
+            try {
+                const resp = await fetch('/Admin/CreateAreaFetch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
 
-            const result = await resp.json();
+                const result = await resp.json();
 
-            if (resp.ok) {
-                // Ocultar modal
-                bootstrap.Modal.getInstance(document.getElementById('modalCreateArea')).hide();
+                if (resp.ok && result.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('modalCreateArea')).hide();
 
-                // Agregar nueva fila a la tabla
-                tablaAreas.row.add($(result.html)).draw(false);
+                    // ✅ refrescar tabla de áreas
+                    tablaAreas.ajax.reload(null, false);
 
-                // ✅ Mostrar toast de éxito
-                showToast(result.message || "Área creada correctamente", "success");
+                    // ✅ refrescar tabla de slides (si es institucional se creó un slide global)
+                    if (typeof table !== "undefined") {
+                        table.ajax.reload(null, false);
+                    }
 
-                // Limpiar formulario
-                document.getElementById("areaNombre").value = "";
-                document.getElementById("areaDescripcion").value = "";
-                document.getElementById("areaActivo").checked = true;
-            } else {
-                // ❌ Mostrar toast de error
-                showToast(result.message || "Error al crear el área", "error");
+                    showToast(result.message || "Área creada correctamente", "success");
+
+                    // limpiar formulario
+                    document.getElementById("areaNombre").value = "";
+                    document.getElementById("areaDescripcion").value = "";
+                    document.getElementById("areaActivo").checked = true;
+                    document.getElementById("areaEsInstitucional").checked = false;
+                } else {
+                    showToast(result.message || "Error al crear el área", "error");
+                }
+            } catch (err) {
+                showToast("Error de conexión con el servidor", "error");
             }
         }
 
         /* ============================
            ABRIR MODAL DE EDICIÓN
         ============================ */
-        async function openEditArea(id) {
-            const resp = await fetch('/Admin/GetArea?id=' + id);
-            const area = await resp.json();
+               async function openEditArea(id) {
+            try {
+                const resp = await fetch('/Admin/GetArea?id=' + id);
+                const result = await resp.json();
 
-            // Ojo: revisa si tu JSON devuelve areaId o AreaId
-            document.getElementById("editAreaId").value = area.areaId ?? area.AreaId;
-            document.getElementById("editNombre").value = area.nombre ?? area.Nombre;
-            document.getElementById("editDescripcion").value = area.descripcion ?? area.Descripcion;
+                if (resp.ok && result.success) {
+                    document.getElementById("editAreaId").value = result.areaId;
+                    document.getElementById("editNombre").value = result.nombre;
+                    document.getElementById("editDescripcion").value = result.descripcion;
 
-            new bootstrap.Modal(document.getElementById('modalEditArea')).show();
+                    new bootstrap.Modal(document.getElementById('modalEditArea')).show();
+                } else {
+                    showToast(result.message || "No se pudo cargar el área", "error");
+                }
+            } catch (err) {
+                showToast("Error de conexión con el servidor", "error");
+            }
+        }
+        async function guardarEdicionArea() {
+            const id = document.getElementById("editAreaId").value;
+            const nombre = document.getElementById("editNombre").value;
+            const descripcion = document.getElementById("editDescripcion").value;
+
+            try {
+                const resp = await fetch('/Admin/EditArea', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ areaId: id, nombre, descripcion })
+                });
+
+                const result = await resp.json();
+
+                if (resp.ok && result.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('modalEditArea')).hide();
+                    tablaAreas.ajax.reload(null, false);
+                    showToast(result.message || "Área actualizada correctamente", "success");
+                } else {
+                    showToast(result.message || "Error al actualizar el área", "error");
+                }
+            } catch (err) {
+                showToast("Error de conexión con el servidor", "error");
+            }
         }
 
         /* ============================
@@ -133,58 +163,56 @@
         function openDeleteArea(id, nombre) {
             document.getElementById("deleteAreaId").value = id;
             document.getElementById("deleteAreaName").textContent = nombre;
-
             new bootstrap.Modal(document.getElementById("modalDeleteArea")).show();
         }
 
         /* ============================
            ELIMINAR ÁREA
         ============================ */
-              async function confirmDeleteArea() {
+        async function confirmDeleteArea() {
             try {
                 const id = document.getElementById("deleteAreaId").value;
 
                 const resp = await fetch('/Admin/DeleteArea', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: id })
+                    body: JSON.stringify({ id })
                 });
 
                 const result = await resp.json();
 
                 if (result.success) {
-                    // Ocultar modal
                     bootstrap.Modal.getInstance(document.getElementById("modalDeleteArea")).hide();
-
-                    // Eliminar la fila de la tabla
-                    const row = document.querySelector(`tr[data-id="${id}"]`);
-                    if (row) tablaAreas.row(row).remove().draw();
-
-                    // ✅ Toast verde
+                    tablaAreas.ajax.reload(null, false);
                     showToast(result.message || "Área eliminada correctamente", "success");
                 } else {
-                    // ❌ Toast rojo
                     showToast(result.message || "No se pudo eliminar el área", "error");
                 }
             } catch (err) {
-                // Error de red
                 showToast("Error de conexión con el servidor", "error");
             }
         }
+
         /* ============================
            SWITCH ACTIVO
         ============================ */
         async function toggleActivoArea(id, estado) {
-            const resp = await fetch('/Admin/UpdateAreaActivo', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ areaId: id, activo: estado })
-            });
+            try {
+                const resp = await fetch('/Admin/UpdateAreaActivo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ areaId: id, activo: estado })
+                });
 
-            const result = await resp.json();
+                const result = await resp.json();
 
-            if (!resp.ok) {
-                showSuccessToast("Error: " + result.message);
+                if (resp.ok && result.success) {
+                    showToast(result.message, "success");
+                } else {
+                    showToast("Error: " + result.message, "error");
+                }
+            } catch (err) {
+                showToast("Error de conexión con el servidor", "error");
             }
         }
 

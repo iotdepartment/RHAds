@@ -1,14 +1,14 @@
 ﻿@using RHAds.Models.Areas
+@model RHAds.ViewModels.SlidesViewModel
 
-@model Area
 
 @{
     ViewData["Title"] = "Slides";
 }
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+<h2>Slides del Área: @Model.Area.Nombre</h2>
 
-<h2>Slides del Área: @Model.Nombre</h2>
 
 <button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#modalCreateSlide">
     Crear Slide
@@ -28,12 +28,12 @@
         </tr>
     </thead>
     <tbody class="text-center">
-        @foreach (var s in Model.Slides.OrderBy(x => x.Orden))
+        @foreach (var s in Model.Area.Slides.OrderBy(x => x.Orden))
         {
-            <tr>
-                <td>@s.Titulo</td>
-                <td>@s.Orden</td>
-                <td>
+            <tr data-slide-id="@s.SlideId">
+                <td class="titulo-cell">@s.Titulo</td>
+                <td class="orden-cell">@s.Orden</td>
+                <td class="activo-cell">
                     <div class="form-check form-switch">
                         <input class="form-check-input toggle-activo"
                                type="checkbox"
@@ -41,9 +41,7 @@
                                @(s.Activo ? "checked" : "") />
                     </div>
                 </td>
-
-                <!-- SELECTOR DE COLOR -->
-                <td>
+                <td class="color-cell">
                     <div>
                         <input type="color"
                                class="form-control form-control-color color-picker"
@@ -52,91 +50,153 @@
                                title="Selecciona un color" />
                     </div>
                 </td>
-
-                <!-- NUEVO: Es Global -->
-                <td>
-                    @(s.EsGlobal ? "Sí" : "No")
-                </td>
-
-                <!-- NUEVO: Área Destino -->
-                <td>
+                <td class="esglobal-cell">@(s.EsGlobal ? "Sí" : "No")</td>
+                <td class="areadestino-cell" data-area-id="@(s.AreaDestinoId ?? 0)">
                     @(s.AreaDestino != null ? s.AreaDestino.Nombre : "-")
                 </td>
-
                 <td>
-                    <a href="/Admin/Fullscreen?areaId=@Model.AreaId"
+                    <a href="/Admin/Fullscreen?areaId=@Model.Area.AreaId"
                        class="btn btn-dark btn-sm rounded-pill" target="_blank" title="Fullscreen">
                         <i class="bi bi-fullscreen"></i>
                     </a>
                     <a href="/Admin/Images?slideId=@s.SlideId" class="btn btn-primary btn-sm rounded-pill" title="Ver Imagenes">
                         <i class="bi bi-card-image"></i>
                     </a>
+                    <button class="btn btn-warning btn-sm rounded-pill open-edit-slide"
+                            data-slide-id="@s.SlideId"
+                            title="Editar Slide">
+                        <i class="bi bi-pencil-square"></i>
+                    </button>
+                    <button class="btn btn-danger btn-sm rounded-pill"
+                            onclick="openDeleteSlide(@s.SlideId, '@s.Titulo')"
+                            title="Eliminar Slide">
+                        <i class="bi bi-trash"></i>
+                    </button>
                 </td>
             </tr>
         }
     </tbody>
 </table>
 
-@await Html.PartialAsync("Partials/_ModalCreateSlide", Model.AreaId)
+@await Html.PartialAsync("Partials/_ModalCreateSlide", Model.Area.AreaId)
+@await Html.PartialAsync("Partials/_ModalDeleteSlide")
+@await Html.PartialAsync("Partials/_ModalEditSlide", Model.AreasDestino)
+
 
 @section Scripts{
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
     <script>
+        let table;
+        $(document).ready(function () {
+            table = $('#tablaSlides').DataTable({
+                ajax: '/Admin/GetSlides?areaId=@Model.Area.AreaId',
+                searching: false,
+                paging: true,
+                info: true,
+                columns: [
+                    { data: 'titulo', className: 'titulo-cell' },
+                    { data: 'orden', className: 'orden-cell' },
+                    { data: 'activo', render: d => `
+                        <div class="form-check form-switch activo-cell">
+                            <input class="form-check-input toggle-activo" type="checkbox" ${d ? "checked" : ""}/>
+                        </div>` },
+                    { data: 'colorCabecera', render: d => `
+                        <div class="color-cell">
+                            <input type="color" class="form-control form-control-color color-picker" value="${d}" />
+                        </div>` },
+                    { data: 'esGlobal', render: d => `<span class="esglobal-cell">${d ? "Sí" : "No"}</span>` },
 
-    new DataTable('#tablaSlides', {
-            searching: false,
-            paging: true,
-            info: true
-    });
+                            {
+            data: 'areaDestinoId',
+            className: 'areadestino-cell',
+            render: (id, type, row) => {
+                if (id && id !== 0) {
+                    return `<span data-area-id="${id}">${row.areaDestinoNombre}</span>`;
+                }
+                return `<span data-area-id="">-</span>`;
+            }
+        },
 
-        // Delegación de eventos para que funcione incluso cuando DataTables re-renderiza
-        document.addEventListener("change", function (e) {
+                    { data: 'slideId', render: id => `
+                        <button class="btn btn-warning btn-sm rounded-pill open-edit-slide" data-slide-id="${id}">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <button class="btn btn-danger btn-sm rounded-pill" onclick="openDeleteSlide(${id}, 'Slide')">
+                            <i class="bi bi-trash"></i>
+                        </button>` }
+                ]
+            });
+        });
+
+        // Abrir modal de eliminación
+        function openDeleteSlide(id, titulo) {
+            document.getElementById("deleteSlideId").value = id;
+            document.getElementById("deleteSlideTitle").innerText = titulo;
+            new bootstrap.Modal(document.getElementById("modalDeleteSlide")).show();
+        }
+
+        // Confirmar eliminación
+        async function confirmDeleteSlide() {
+            const id = document.getElementById("deleteSlideId").value;
+            try {
+                const resp = await fetch('/Admin/DeleteSlide?slideId=' + id, { method: 'POST' });
+                const result = await resp.json();
+
+                if (result.success) {
+                    bootstrap.Modal.getInstance(document.getElementById("modalDeleteSlide")).hide();
+                    showToast(result.message, "success");
+                    table.ajax.reload(null, false); // ✅ refrescar tabla
+                } else {
+                    showToast(result.message, "error");
+                }
+            } catch (err) {
+                showToast("Error de conexión con el servidor", "error");
+            }
+        }
+
+        // Delegación de eventos para toggle activo
+                  document.addEventListener("change", function (e) {
             if (e.target.classList.contains("toggle-activo")) {
-
-                const slideId = e.target.getAttribute("data-slide-id");
+                const row = e.target.closest("tr");
+                const slideId = table.row(row).data().slideId;
                 const activo = e.target.checked;
 
                 fetch("/Admin/ToggleSlideActivoAjax", {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        slideId: slideId,
-                        activo: activo
-                    })
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ slideId, activo })
                 })
                 .then(r => r.json())
                 .then(data => {
-                    console.log("Estado guardado:", data);
+                    if (data.success) {
+                        showToast(data.message || "Estado actualizado correctamente", "success");
+                    } else {
+                        showToast(data.message || "No se pudo actualizar el estado", "error");
+                    }
                 })
-                .catch(err => console.error("Error:", err));
+                .catch(err => {
+                    showToast("Error de conexión con el servidor", "error");
+                });
             }
         });
-    </script>
-    <script>
-        // Delegación de eventos para el colorpicker
+
+        // Delegación de eventos para color picker
         document.addEventListener("change", function (e) {
             if (e.target.classList.contains("color-picker")) {
-
-                const slideId = e.target.getAttribute("data-slide-id");
+                const row = e.target.closest("tr");
+                const slideId = table.row(row).data().slideId;
                 const color = e.target.value;
 
                 fetch("/Admin/UpdateSlideColorAjax", {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        slideId: slideId,
-                        color: color
-                    })
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ slideId, color })
                 })
                 .then(r => r.json())
-                .then(data => {
-                    console.log("Color guardado:", data);
-                })
+                .then(data => console.log("Color guardado:", data))
                 .catch(err => console.error("Error:", err));
             }
         });

@@ -1,4 +1,8 @@
 ﻿@using RHAds.Models.Areas
+@{
+    var areaId = (int)Model;
+    var areas = ViewBag.Areas as List<Area>;
+}
 
 <div class="modal fade" id="modalCreateSlide" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -10,7 +14,6 @@
             </div>
 
             <div class="modal-body">
-
                 <input type="hidden" id="slideAreaId" value="@Model" />
 
                 <div class="mb-3">
@@ -28,65 +31,98 @@
                     <label class="form-check-label">Activo</label>
                 </div>
 
-                <!-- NUEVO: Es Global -->
                 <div class="form-check mb-3">
-                    <input id="slideEsGlobal" type="checkbox" class="form-check-input">
+                    <input id="slideEsGlobal" type="checkbox" class="form-check-input" onchange="toggleAreaDestino()">
                     <label class="form-check-label">Es Global</label>
                 </div>
 
-                <!-- NUEVO: Área destino -->
                 <div class="mb-3">
+                    <label class="form-label">Color Cabecera</label>
+                    <input id="slideColor" type="color" class="form-control form-control-color" />
+                </div>
+
+                <div class="mb-3" id="areaDestinoContainer" style="display:none;">
                     <label class="form-label">Área destino</label>
                     <select id="slideAreaDestinoId" class="form-select">
                         <option value="">-- Selecciona un área --</option>
-                        @foreach (var area in (ViewBag.Areas as List<Area>))
+                        @if (areas != null)
                         {
-                            <option value="@area.AreaId">@area.Nombre</option>
+                            foreach (var area in areas.Where(a => a.EsInstitucional))
+                            {
+                                <option value="@area.AreaId">@area.Nombre</option>
+                            }
                         }
                     </select>
                 </div>
-
             </div>
 
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button class="btn btn-primary" onclick="guardarSlide()">Guardar</button>
             </div>
-
         </div>
     </div>
 </div>
 
 <script>
-    async function guardarSlide() {
+    function toggleAreaDestino() {
+        const esGlobal = document.getElementById("slideEsGlobal").checked;
+        const container = document.getElementById("areaDestinoContainer");
+        if (esGlobal) {
+            container.style.display = "block";
+        } else {
+            container.style.display = "none";
+            document.getElementById("slideAreaDestinoId").value = "";
+        }
+    }
+
+       async function guardarSlide() {
+        const esGlobal = document.getElementById("slideEsGlobal").checked;
+        const areaDestinoId = document.getElementById("slideAreaDestinoId").value;
+
+        if (esGlobal && (!areaDestinoId || areaDestinoId === "")) {
+            showToast("Debes seleccionar un área destino cuando el slide es global.", "error");
+            return;
+        }
+
         const data = {
             areaId: parseInt(document.getElementById("slideAreaId").value),
             titulo: document.getElementById("slideTitulo").value,
             orden: parseInt(document.getElementById("slideOrden").value),
             activo: document.getElementById("slideActivo").checked,
-            esGlobal: document.getElementById("slideEsGlobal").checked,
-            areaDestinoId: document.getElementById("slideAreaDestinoId").value
-                ? parseInt(document.getElementById("slideAreaDestinoId").value)
-                : null
+            esGlobal: esGlobal,
+            colorCabecera: document.getElementById("slideColor").value,
+            areaDestinoId: esGlobal ? parseInt(areaDestinoId) : null
         };
 
-        const resp = await fetch('/Admin/CreateSlideFetch', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
+        try {
+            const resp = await fetch('/Admin/CreateSlideFetch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
 
-        const result = await resp.json();
+            const result = await resp.json();
+            if (resp.ok && result.success) {
+                showToast(result.message, "success");
+                bootstrap.Modal.getInstance(document.getElementById('modalCreateSlide')).hide();
 
-        if (resp.ok) {
-            alert(result.message);
+                // ✅ refrescar la tabla con los datos nuevos
+                table.ajax.reload(null, false);
 
-            const modal = bootstrap.Modal.getInstance(document.getElementById('modalCreateSlide'));
-            modal.hide();
-
-            location.reload();
-        } else {
-            alert("Error: " + result.message);
+                // ✅ limpiar campos del modal
+                document.getElementById("slideTitulo").value = "";
+                document.getElementById("slideOrden").value = "";
+                document.getElementById("slideActivo").checked = true;
+                document.getElementById("slideEsGlobal").checked = false;
+                document.getElementById("slideColor").value = "#000000";
+                document.getElementById("slideAreaDestinoId").value = "";
+                toggleAreaDestino();
+            } else {
+                showToast("Error: " + result.message, "error");
+            }
+        } catch (err) {
+            showToast("Error de conexión con el servidor", "error");
         }
     }
 </script>

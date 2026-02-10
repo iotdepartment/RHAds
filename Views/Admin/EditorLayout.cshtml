@@ -149,6 +149,15 @@
 
             @foreach (Slide slide in ViewBag.SlidesGlobales)
             {
+                // ✅ Determinar si estamos en el área destino del slide
+                bool esAreaDestino = slide.AreaDestinoId == Model.AreaId;
+
+                // ✅ Si estamos en el área destino, no lo repetimos aquí porque ya aparecerá en Model.SlideLayouts
+                if (esAreaDestino)
+                {
+                    continue;
+                }
+
                 <div class="grid-stack-item"
                      data-gs-id="global-@slide.SlideId"
                      gs-x="@(slide.AreaDestinoId == 4 ? 0 : 2)"
@@ -161,7 +170,7 @@
 
                     <div class="grid-stack-item-content" style="opacity:0.6; pointer-events:none;">
                         <div class="slide-title w-100 text-center" style="background:@slide.ColorCabecera;">
-                            @slide.Titulo (Fijo)
+                            @slide.Titulo (Institucional)
                         </div>
 
                         <div class="carousel-area d-flex justify-content-center align-items-center">

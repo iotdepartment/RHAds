@@ -95,11 +95,9 @@
              gs-h="2"
              data-gs-no-move="true"
              data-gs-no-resize="true">
-
             <div class="grid-stack-item-content d-flex justify-content-center align-items-center bg-secondary-subtle">
                 <img src="/images/logo.png" class="img-fluid w-75 h-75 object-fit-contain" />
             </div>
-
         </div>
 
         <!-- ÁREA FIJA -->
@@ -111,16 +109,23 @@
              gs-h="2"
              data-gs-no-move="true"
              data-gs-no-resize="true">
-
             <div class="grid-stack-item-content d-flex justify-content-center align-items-center"
                  style="color:white; font-size:2rem; font-weight:bold;">
                 @Model.Nombre
             </div>
         </div>
 
-        <!-- SLIDES GLOBALES (RH y EHS) -->
+        <!-- SLIDES GLOBALES -->
         @foreach (Slide slide in ViewBag.SlidesGlobales)
         {
+            bool esAreaDestino = slide.AreaDestinoId == Model.AreaId;
+
+            if (esAreaDestino)
+            {
+                // ✅ No repetir aquí, ya aparecerá en Model.SlideLayouts
+                continue;
+            }
+
             <div class="grid-stack-item"
                  data-gs-id="global-@slide.SlideId"
                  gs-x="@(slide.AreaDestinoId == 4 ? 0 : 2)"
@@ -128,14 +133,11 @@
                  gs-w="2"
                  gs-h="4"
                  data-gs-no-move="true"
-                 data-gs-no-resize="true">
+                 data-gs-no-resize="true"
+                 data-gs-locked="true">
 
-                <div class="grid-stack-item-content"
-                     style="cursor:pointer;"
-                     onclick="window.location='/Admin/Fullscreen?areaId=@slide.AreaDestinoId'">
-
-                    <div class="slide-title w-100 text-center"
-                         style="background:@slide.ColorCabecera;">
+                <div class="grid-stack-item-content" style="opacity:0.6; pointer-events:none;">
+                    <div class="slide-title w-100 text-center" style="background:@slide.ColorCabecera;">
                         @slide.Titulo
                     </div>
 
@@ -144,12 +146,11 @@
                             @await Html.PartialAsync("_SlideCarousel", slide)
                         </div>
                     </div>
-
                 </div>
             </div>
         }
 
-        <!-- SLIDES -->
+        <!-- SLIDES NORMALES + INSTITUCIONALES DEL ÁREA -->
         @foreach (var layout in Model.SlideLayouts.Where(x => x.Slide.Activo))
         {
             <div class="grid-stack-item"
@@ -158,24 +159,18 @@
                  gs-y="@layout.Y"
                  gs-w="@layout.Width"
                  gs-h="@layout.Height"
-                 data-gs-no-move="true"
-                 data-gs-no-resize="true">
+                 gs-auto-position="false">
 
-                <div class="grid-stack-item-content">
-
-                    <div class="slide-title w-100 text-center"
-                         style="background:@layout.Slide.ColorCabecera;">
+                <div class="grid-stack-item-content d-flex flex-column">
+                    <div class="slide-title w-100 text-center" style="background:@layout.Slide.ColorCabecera;">
                         @layout.Slide.Titulo
                     </div>
-
-                    <div class="carousel-area d-flex justify-content-center align-items-center">
+                    <div class="carousel-area d-flex justify-content-center align-items-center flex-grow-1 w-100">
                         <div class="carousel-wrapper w-100 h-100">
                             @await Html.PartialAsync("_SlideCarousel", layout.Slide)
                         </div>
                     </div>
-
                 </div>
-
             </div>
         }
     </div>

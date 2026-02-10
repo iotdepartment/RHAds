@@ -1,0 +1,170 @@
+﻿@using RHAds.Models.Areas
+@model IEnumerable<Area>
+
+<div class="modal fade" id="modalEditSlide" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">Editar Slide</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <input type="hidden" id="editSlideId" />
+
+                <!-- Título -->
+                <div class="mb-3">
+                    <label class="form-label">Título</label>
+                    <input id="editSlideTitulo" type="text" class="form-control" />
+                </div>
+
+                <!-- Orden -->
+                <div class="mb-3">
+                    <label class="form-label">Orden</label>
+                    <input id="editSlideOrden" type="number" class="form-control" />
+                </div>
+
+                <!-- Activo -->
+                <div class="mb-3 form-check">
+                    <input id="editSlideActivo" type="checkbox" class="form-check-input" />
+                    <label class="form-check-label">Activo</label>
+                </div>
+
+                <!-- Color Cabecera -->
+                <div class="mb-3">
+                    <label class="form-label">Color Cabecera</label>
+                    <input id="editSlideColor" type="color" class="form-control form-control-color" />
+                </div>
+
+                <!-- Es Global -->
+                <div class="mb-3 form-check">
+                    <input id="editSlideEsGlobal" type="checkbox" class="form-check-input" />
+                    <label class="form-check-label">Es Global (Institucional)</label>
+                </div>
+
+                <!-- Área Destino -->
+                <div class="mb-3" id="areaDestinoWrapper">
+                    <label class="form-label">Área Destino</label>
+                    <select id="editSlideAreaDestinoId" class="form-select">
+                        <option value="">-- Ninguna --</option>
+                        @{
+                            foreach (var area in Model.Where(a => a.EsInstitucional))
+                            {
+                                <option value="@area.AreaId">@area.Nombre</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-warning rounded-pill" onclick="guardarEdicionSlide()">Guardar Cambios</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    
+    document.addEventListener("DOMContentLoaded", function () {
+        const chkEsGlobal = document.getElementById("editSlideEsGlobal");
+        const wrapper = document.getElementById("areaDestinoWrapper");
+
+        function toggleAreaDestino() {
+            if (chkEsGlobal.checked) {
+                wrapper.style.display = "block";
+            } else {
+                wrapper.style.display = "none";
+                document.getElementById("editSlideAreaDestinoId").value = "";
+            }
+        }
+
+        chkEsGlobal.addEventListener("change", toggleAreaDestino);
+
+        // Inicializar estado al cargar modal
+        toggleAreaDestino();
+    });
+
+       function openEditSlide(id, titulo, orden, activo, color, esGlobal, areaDestinoId) {
+        document.getElementById("editSlideId").value = id;
+        document.getElementById("editSlideTitulo").value = titulo;
+        document.getElementById("editSlideOrden").value = orden;
+        document.getElementById("editSlideActivo").checked = activo;
+        document.getElementById("editSlideColor").value = color;
+        document.getElementById("editSlideEsGlobal").checked = esGlobal;
+
+        const select = document.getElementById("editSlideAreaDestinoId");
+        if (select) {
+            select.value = (esGlobal && areaDestinoId) ? areaDestinoId.toString() : "";
+        }
+
+        const wrapper = document.getElementById("areaDestinoWrapper");
+        wrapper.style.display = esGlobal ? "block" : "none";
+
+        new bootstrap.Modal(document.getElementById("modalEditSlide")).show();
+    }
+
+
+    // Guardar edición de slide
+        async function guardarEdicionSlide() {
+        const esGlobal = document.getElementById("editSlideEsGlobal").checked;
+        const areaDestinoId = document.getElementById("editSlideAreaDestinoId").value;
+
+        if (esGlobal && (!areaDestinoId || areaDestinoId === "")) {
+            showToast("Debes seleccionar un área destino cuando el slide es global.", "error");
+            return;
+        }
+
+        const data = {
+            slideId: parseInt(document.getElementById("editSlideId").value),
+            titulo: document.getElementById("editSlideTitulo").value,
+            orden: parseInt(document.getElementById("editSlideOrden").value),
+            activo: document.getElementById("editSlideActivo").checked,
+            colorCabecera: document.getElementById("editSlideColor").value,
+            esGlobal: esGlobal,
+            areaDestinoId: esGlobal ? parseInt(areaDestinoId) : null
+        };
+
+        try {
+            const resp = await fetch('/Admin/EditSlide', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await resp.json();
+            if (resp.ok && result.success) {
+                showToast(result.message, "success");
+                bootstrap.Modal.getInstance(document.getElementById('modalEditSlide')).hide();
+
+                // ✅ refrescar la tabla
+                table.ajax.reload(null, false);
+            } else {
+                showToast("Error: " + result.message, "error");
+            }
+        } catch (err) {
+            showToast("Error de conexión con el servidor", "error");
+        }
+    }
+
+    // Listener para botones de editar
+        document.addEventListener("click", function(e) {
+        if (e.target.closest(".open-edit-slide")) {
+            const btn = e.target.closest(".open-edit-slide");
+            const row = btn.closest("tr");
+
+            const slideId = btn.dataset.slideId;
+            const titulo = row.querySelector(".titulo-cell").textContent;
+            const orden = row.querySelector(".orden-cell").textContent;
+            const activo = row.querySelector(".activo-cell input").checked;
+            const color = row.querySelector(".color-cell input").value;
+            const esGlobal = row.querySelector(".esglobal-cell").textContent === "Sí";
+            const areaDestinoId = row.querySelector(".areadestino-cell span").dataset.areaId;
+
+            openEditSlide(slideId, titulo, orden, activo, color, esGlobal, areaDestinoId);
+        }
+    });
+</script>
