@@ -20,6 +20,16 @@
                     <label class="form-label">Descripción</label>
                     <textarea id="editDescripcion" class="form-control" rows="2"></textarea>
                 </div>
+
+                <div class="form-check mb-3">
+                    <input id="editActivo" type="checkbox" class="form-check-input">
+                    <label class="form-check-label">Activo</label>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input id="editEsInstitucional" type="checkbox" class="form-check-input">
+                    <label class="form-check-label">Es Institucional</label>
+                </div>
             </div>
 
             <div class="modal-footer">
@@ -36,25 +46,25 @@
     /* ============================
        GUARDAR EDICIÓN DE ÁREA
     ============================ */
-         async function guardarEdicionArea() {
-        const areaId = document.getElementById("editAreaId").value;
-        const nombre = document.getElementById("editNombre").value;
-        const descripcion = document.getElementById("editDescripcion").value;
-
-        const formData = new FormData();
-        formData.append("areaId", areaId);
-        formData.append("nombre", nombre);
-        formData.append("descripcion", descripcion);
+               async function guardarEdicionArea() {
+        const req = {
+            areaId: parseInt(document.getElementById("editAreaId").value),
+            nombre: document.getElementById("editNombre").value,
+            descripcion: document.getElementById("editDescripcion").value,
+            activo: document.getElementById("editActivo").checked,
+            esInstitucional: document.getElementById("editEsInstitucional").checked
+        };
 
         try {
             const resp = await fetch('/Admin/EditArea', {
                 method: 'POST',
-                body: formData
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(req)
             });
 
             const result = await resp.json();
 
-            if (!resp.ok) {
+            if (!resp.ok || !result.success) {
                 showToast(result.message || "Error al actualizar el área", "error");
                 return;
             }
@@ -63,17 +73,38 @@
             bootstrap.Modal.getInstance(document.getElementById('modalEditArea')).hide();
 
             // Toast éxito
-            showToast(result.message || "Área actualizada correctamente", "success");
+            showToast(result.message, "success");
 
-            // ✅ Actualizar fila en DataTable usando areaId
-            const fila = tablaAreas.row(`[data-id="${areaId}"]`);
-            fila.cell(fila.index(), 0).data(`<span class="text-center d-block">${nombre}</span>`);
-            fila.cell(fila.index(), 1).data(`<span class="text-center d-block">${descripcion}</span>`);
-            fila.draw(false);
+            // ✅ Recargar DataTable desde el servidor
+            tablaAreas.ajax.reload(null, false);
 
         } catch (err) {
             showToast("Error de conexión con el servidor", "error");
         }
     }
+
+            async function openEditArea(id) {
+        try {
+            const resp = await fetch('/Admin/GetArea?id=' + id);
+            const result = await resp.json();
+
+            if (resp.ok && result.success) {
+                document.getElementById("editAreaId").value = result.areaId;
+                document.getElementById("editNombre").value = result.nombre;
+                document.getElementById("editDescripcion").value = result.descripcion;
+
+                // ✅ checkboxes
+                document.getElementById("editActivo").checked = result.activo;
+                document.getElementById("editEsInstitucional").checked = result.esInstitucional;
+
+                new bootstrap.Modal(document.getElementById('modalEditArea')).show();
+            } else {
+                showToast(result.message || "No se pudo cargar el área", "error");
+            }
+        } catch (err) {
+            showToast("Error de conexión con el servidor", "error");
+        }
+    }
+
 
 </script>

@@ -149,12 +149,11 @@
 
             @foreach (Slide slide in ViewBag.SlidesGlobales)
             {
-                // ✅ Determinar si estamos en el área destino del slide
                 bool esAreaDestino = slide.AreaDestinoId == Model.AreaId;
 
-                // ✅ Si estamos en el área destino, no lo repetimos aquí porque ya aparecerá en Model.SlideLayouts
                 if (esAreaDestino)
                 {
+                    // ✅ No repetir aquí, ya aparecerá en Model.SlideLayouts
                     continue;
                 }
 
@@ -164,11 +163,11 @@
                      gs-y="8"
                      gs-w="2"
                      gs-h="4"
-                     data-gs-no-move="true"
-                     data-gs-no-resize="true"
-                     data-gs-locked="true">
+                     data-gs-no-move="@(esAreaDestino ? "false" : "true")"
+                     data-gs-no-resize="@(esAreaDestino ? "false" : "true")"
+                     data-gs-locked="@(esAreaDestino ? "false" : "true")">
 
-                    <div class="grid-stack-item-content" style="opacity:0.6; pointer-events:none;">
+                    <div class="grid-stack-item-content @(esAreaDestino ? "" : "opacity-60")" style="@(esAreaDestino ? "" : "pointer-events:none;")">
                         <div class="slide-title w-100 text-center" style="background:@slide.ColorCabecera;">
                             @slide.Titulo (Institucional)
                         </div>
@@ -217,7 +216,7 @@
     </form>
 
     <script>
-        window.addEventListener("load", function () {
+               window.addEventListener("load", function () {
 
             const TOTAL_ROWS = 12;
             const gridHeight = window.innerHeight - 60;
@@ -231,9 +230,8 @@
                 maxRow: TOTAL_ROWS
             });
 
-            // BLOQUEAR WIDGETS FIJOS (LOGO Y ÁREA)
-           ["fixed-logo", "fixed-area", "global-9", "global-10"].forEach(id => {
-
+            // ✅ Bloquear siempre los widgets fijos (logo y área)
+            ["fixed-logo", "fixed-area"].forEach(id => {
                 const el = document.querySelector(`[data-gs-id="${id}"]`);
                 if (!el) return;
 
@@ -246,11 +244,25 @@
                 el.classList.add("grid-stack-static");
             });
 
-            // FUNCIÓN PARA FORZAR QUE NADA SE SALGA DEL GRID
+            // ✅ Bloquear dinámicamente los slides globales según el área
+            document.querySelectorAll("[data-gs-id^='global-']").forEach(el => {
+                const areaDestinoId = el.dataset.areaDestinoId;
+                const esAreaDestino = areaDestinoId === "@Model.AreaId.ToString()";
+
+                grid.update(el, {
+                    noMove: !esAreaDestino,
+                    noResize: !esAreaDestino,
+                    locked: !esAreaDestino
+                });
+
+                if (!esAreaDestino) {
+                    el.classList.add("grid-stack-static");
+                }
+            });
+
+            // Función para forzar que nada se salga del grid
             function clampNode(node) {
                 if (!node) return;
-
-                // Si se pasa hacia abajo, lo regresamos
                 if (node.y + node.h > TOTAL_ROWS) {
                     node.y = TOTAL_ROWS - node.h;
                     if (node.y < 0) node.y = 0;
@@ -258,29 +270,15 @@
                 }
             }
 
-            // BLOQUEAR DRAG HACIA ABAJO
-            grid.on('drag', (event, el) => {
-                const node = el.gridstackNode;
-                clampNode(node);
-            });
-
-            // BLOQUEAR RESIZE HACIA ABAJO
-            grid.on('resize', (event, el) => {
-                const node = el.gridstackNode;
-                clampNode(node);
-            });
-
-            // BLOQUEAR CAMBIOS AUTOMÁTICOS DEL ENGINE
-            grid.on('change', (event, items) => {
-                items.forEach(n => clampNode(n));
-            });
+            grid.on('drag', (event, el) => clampNode(el.gridstackNode));
+            grid.on('resize', (event, el) => clampNode(el.gridstackNode));
+            grid.on('change', (event, items) => items.forEach(n => clampNode(n)));
 
             // Ajuste de imágenes
             function ajustarImagenes() {
                 document.querySelectorAll(".slide-img").forEach(img => {
                     const cont = img.closest(".carousel-area");
                     if (!cont) return;
-
                     img.style.maxHeight = cont.clientHeight + "px";
                     img.style.maxWidth = cont.clientWidth + "px";
                 });
@@ -288,17 +286,14 @@
 
             ajustarImagenes();
             window.addEventListener("resize", ajustarImagenes);
-
             document.querySelectorAll(".carousel").forEach(carousel => {
                 carousel.addEventListener("slid.bs.carousel", ajustarImagenes);
             });
-
             grid.on('resizestop', ajustarImagenes);
             grid.on('dragstop', ajustarImagenes);
 
             // Guardado
             document.querySelector("#layoutForm").addEventListener("submit", function () {
-
                 const layout = grid.engine.nodes
                     .filter(n => !["fixed-logo", "fixed-area"].includes(n.el.dataset.gsId))
                     .map(n => ({
@@ -317,9 +312,7 @@
                         <input type="hidden" name="H_${item.id}" value="${item.h}">
                     `);
                 });
-
             });
-
         });
     </script>
 </body>

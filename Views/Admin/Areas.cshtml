@@ -110,53 +110,7 @@
             }
         }
 
-        /* ============================
-           ABRIR MODAL DE EDICIÓN
-        ============================ */
-               async function openEditArea(id) {
-            try {
-                const resp = await fetch('/Admin/GetArea?id=' + id);
-                const result = await resp.json();
-
-                if (resp.ok && result.success) {
-                    document.getElementById("editAreaId").value = result.areaId;
-                    document.getElementById("editNombre").value = result.nombre;
-                    document.getElementById("editDescripcion").value = result.descripcion;
-
-                    new bootstrap.Modal(document.getElementById('modalEditArea')).show();
-                } else {
-                    showToast(result.message || "No se pudo cargar el área", "error");
-                }
-            } catch (err) {
-                showToast("Error de conexión con el servidor", "error");
-            }
-        }
-        async function guardarEdicionArea() {
-            const id = document.getElementById("editAreaId").value;
-            const nombre = document.getElementById("editNombre").value;
-            const descripcion = document.getElementById("editDescripcion").value;
-
-            try {
-                const resp = await fetch('/Admin/EditArea', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ areaId: id, nombre, descripcion })
-                });
-
-                const result = await resp.json();
-
-                if (resp.ok && result.success) {
-                    bootstrap.Modal.getInstance(document.getElementById('modalEditArea')).hide();
-                    tablaAreas.ajax.reload(null, false);
-                    showToast(result.message || "Área actualizada correctamente", "success");
-                } else {
-                    showToast(result.message || "Error al actualizar el área", "error");
-                }
-            } catch (err) {
-                showToast("Error de conexión con el servidor", "error");
-            }
-        }
-
+        
         /* ============================
            ABRIR MODAL DE ELIMINAR
         ============================ */

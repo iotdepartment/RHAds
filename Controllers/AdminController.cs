@@ -29,6 +29,35 @@ namespace RHAds.Controllers
             return View();
         }
 
+
+        private (int X, int Y) BuscarEspacioLibre(int areaId, int defaultX, int defaultY, int w, int h, int maxCols = 12, int maxRows = 12)
+        {
+            int x = defaultX;
+            int y = defaultY;
+
+            while (true)
+            {
+                bool ocupado = _context.SlideLayouts
+                    .Any(l => l.AreaId == areaId &&
+                              !(x + w <= l.X || l.X + l.Width <= x || y + h <= l.Y || l.Y + l.Height <= y));
+
+                if (!ocupado)
+                    return (x, y);
+
+                // mover en eje X
+                x += w;
+                if (x + w > maxCols)
+                {
+                    x = 0;
+                    y += h;
+                }
+
+                if (y + h > maxRows)
+                    throw new InvalidOperationException("No hay espacio disponible en el grid.");
+            }
+        }
+
+
         // Vista principal de Áreas
         public IActionResult Areas()
         {
@@ -49,7 +78,7 @@ namespace RHAds.Controllers
                 })
                 .ToListAsync();
 
-            return Json(new { data = areas });
+            return Ok(new { data = areas });
         }
 
         // Obtener un área puntual
@@ -60,13 +89,16 @@ namespace RHAds.Controllers
             if (area == null)
                 return Ok(new { success = false, message = "Área no encontrada" });
 
-            return Ok(new {
+            return Ok(new
+            {
                 success = true,
                 areaId = area.AreaId,
                 nombre = area.Nombre,
                 descripcion = area.Descripcion,
+                activo = area.Activo,
                 esInstitucional = area.EsInstitucional
             });
+
         }
 
         // Crear área con slide global si es institucional
@@ -91,16 +123,18 @@ namespace RHAds.Controllers
                     ColorCabecera = "#000000",
                     AreaDestinoId = model.AreaId
                 };
-
                 _context.Slides.Add(slide);
                 await _context.SaveChangesAsync();
+
+                // ✅ Buscar espacio libre
+                var (x, y) = BuscarEspacioLibre(model.AreaId, 0, 0, 2, 2);
 
                 var layout = new SlideLayout
                 {
                     SlideId = slide.SlideId,
                     AreaId = model.AreaId,
-                    X = 0,
-                    Y = 0,
+                    X = x,
+                    Y = y,
                     Width = 2,
                     Height = 2
                 };
@@ -125,8 +159,12 @@ namespace RHAds.Controllers
 
             area.Nombre = req.Nombre;
             area.Descripcion = req.Descripcion;
+            area.Activo = req.Activo;
+            area.EsInstitucional = req.EsInstitucional;
+
             await _context.SaveChangesAsync();
 
+            // ✅ Si es institucional y no tiene slide global, crear uno
             if (area.EsInstitucional && !area.Slides.Any(s => s.EsGlobal))
             {
                 var slide = new Slide
@@ -142,9 +180,54 @@ namespace RHAds.Controllers
 
                 _context.Slides.Add(slide);
                 await _context.SaveChangesAsync();
+
+                var (x, y) = BuscarEspacioLibre(area.AreaId, 0, 0, 2, 2);
+
+                var layout = new SlideLayout
+                {
+                    SlideId = slide.SlideId,
+                    AreaId = area.AreaId,
+                    X = x,
+                    Y = y,
+                    Width = 2,
+                    Height = 2
+                };
+
+                _context.SlideLayouts.Add(layout);
+                await _context.SaveChangesAsync();
             }
 
-            return Ok(new { success = true, message = "Área actualizada correctamente." });
+            // ✅ Si ya no es institucional, eliminar el slide global
+            if (!area.EsInstitucional && area.Slides.Any(s => s.EsGlobal))
+            {
+                var globalSlides = area.Slides.Where(s => s.EsGlobal).ToList();
+
+                foreach (var slide in globalSlides)
+                {
+                    // Eliminar layouts asociados
+                    var layouts = _context.SlideLayouts.Where(l => l.SlideId == slide.SlideId);
+                    _context.SlideLayouts.RemoveRange(layouts);
+
+                    // Eliminar slide
+                    _context.Slides.Remove(slide);
+                }
+
+                await _context.SaveChangesAsync();
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message = "Área actualizada correctamente.",
+                data = new
+                {
+                    areaId = area.AreaId,
+                    nombre = area.Nombre,
+                    descripcion = area.Descripcion,
+                    activo = area.Activo,
+                    esInstitucional = area.EsInstitucional
+                }
+            });
         }
 
         // Actualizar estado activo
@@ -208,6 +291,8 @@ namespace RHAds.Controllers
             public int AreaId { get; set; }
             public string Nombre { get; set; }
             public string Descripcion { get; set; }
+            public bool Activo { get; set; }
+            public bool EsInstitucional { get; set; }
         }
 
 
@@ -275,9 +360,16 @@ namespace RHAds.Controllers
             if (model == null || string.IsNullOrWhiteSpace(model.Titulo))
                 return BadRequest(new { success = false, message = "El título es obligatorio." });
 
-            // ✅ Validación: si es institucional, verificar que no exista otro institucional en el área
+            var area = await _context.Areas.FirstOrDefaultAsync(a => a.AreaId == model.AreaId);
+            if (area == null)
+                return BadRequest(new { success = false, message = "Área no encontrada." });
+
+            // ✅ Validación: si es global, el área debe ser institucional
             if (model.EsGlobal)
             {
+                if (!area.EsInstitucional)
+                    return BadRequest(new { success = false, message = "Solo las áreas institucionales pueden tener slides globales." });
+
                 bool existeInstitucional = await _context.Slides
                     .AnyAsync(s => s.AreaId == model.AreaId && s.EsGlobal);
 
@@ -301,12 +393,31 @@ namespace RHAds.Controllers
 
             if (!model.EsGlobal)
             {
+                // ✅ Slide normal → posición fija
                 var layout = new SlideLayout
                 {
                     SlideId = slide.SlideId,
                     AreaId = slide.AreaId,
                     X = 0,
                     Y = 10,
+                    Width = 2,
+                    Height = 2
+                };
+
+                _context.SlideLayouts.Add(layout);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                // ✅ Slide institucional → buscar espacio libre
+                var (x, y) = BuscarEspacioLibre(model.AreaId, 0, 0, 2, 2);
+
+                var layout = new SlideLayout
+                {
+                    SlideId = slide.SlideId,
+                    AreaId = slide.AreaId,
+                    X = x,
+                    Y = y,
                     Width = 2,
                     Height = 2
                 };
