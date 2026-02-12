@@ -1,38 +1,5 @@
 ﻿@model Dictionary<int, string>
 
-<div class="cross-container">
-
-    @for (int i = 1; i <= 6; i += 2)
-    {
-        <div class="row">
-            <div class="day @Model[i]">@i</div>
-            <div class="day @Model[i + 1]">@((i + 1))</div>
-        </div>
-    }
-
-    @for (int i = 7; i <= 24; i += 6)
-    {
-        <div class="row">
-            @for (int d = i; d < i + 6; d++)
-            {
-                <div class="day @Model[d]">@d</div>
-            }
-        </div>
-    }
-
-    @for (int i = 25; i <= 30; i += 2)
-    {
-        <div class="row">
-            <div class="day @Model[i]">@i</div>
-            <div class="day @Model[i + 1]">@((i + 1))</div>
-        </div>
-    }
-
-    <div class="row">
-        <div class="day day-wide @Model[31]">31</div>
-    </div>
-
-</div>
 
 <style>
     .cross-container {
@@ -83,3 +50,37 @@
         color: white;
     }
 </style>
+
+<div class="cross-container">
+
+    @for (int i = 1; i <= 6; i += 2)
+    {
+        <div class="row">
+            <div class="day @Model[i]">@i</div>
+            <div class="day @Model[i + 1]">@((i + 1))</div>
+        </div>
+    }
+
+    @for (int i = 7; i <= 24; i += 6)
+    {
+        <div class="row">
+            @for (int d = i; d < i + 6; d++)
+            {
+                <div class="day @Model[d]">@d</div>
+            }
+        </div>
+    }
+
+    @for (int i = 25; i <= 30; i += 2)
+    {
+        <div class="row">
+            <div class="day @Model[i]">@i</div>
+            <div class="day @Model[i + 1]">@((i + 1))</div>
+        </div>
+    }
+
+    <div class="row">
+        <div class="day day-wide @Model[31]">31</div>
+    </div>
+
+</div>

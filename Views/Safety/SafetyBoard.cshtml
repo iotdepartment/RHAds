@@ -1,7 +1,49 @@
-﻿@model Dictionary<int, string>
+﻿@model RHAds.ViewModels.SafetyBoardViewModel
 
 <h2>Safety Board</h2>
 
+<div class="row mb-4">
+    <!-- Near Miss -->
+    <div class="col-3">
+        <div class="card text-center border-primary">
+            <div class="card-header bg-primary text-white">
+                Near Miss
+            </div>
+            <div class="card-body">
+                <h3 class="card-title">@Model.DiasDesdeNearMiss</h3>
+                <p class="card-text">Días desde el último near miss</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Incidente -->
+    <div class="col-3">
+        <div class="card text-center border-warning">
+            <div class="card-header bg-warning text-dark">
+                Incidente
+            </div>
+            <div class="card-body">
+                <h3 class="card-title">@Model.DiasDesdeIncidente</h3>
+                <p class="card-text">Días desde el último incidente</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accidente -->
+    <div class="col-3">
+        <div class="card text-center border-danger">
+            <div class="card-header bg-danger text-white">
+                Accidente
+            </div>
+            <div class="card-body">
+                <h3 class="card-title">@Model.DiasDesdeAccidente</h3>
+                <p class="card-text">Días desde el último accidente</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="safetyCrossContainer">
-    @await Html.PartialAsync("Partials/_SafetyBoardPartial", Model)
+    @await Html.PartialAsync("Partials/_SafetyBoardPartial", Model.Colores)
+</div>
 </div>

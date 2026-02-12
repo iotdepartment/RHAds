@@ -108,6 +108,13 @@ namespace RHAds.Controllers
             if (string.IsNullOrWhiteSpace(model.Nombre))
                 return BadRequest(new { success = false, message = "El nombre es obligatorio." });
 
+            // ✅ Contar cuántos slides globales existen en total
+            int totalGlobales = await _context.Slides.CountAsync(s => s.EsGlobal);
+
+            // ✅ Si se intenta crear institucional y ya hay 2 → bloquear
+            if (model.EsInstitucional && totalGlobales >= 2)
+                return BadRequest(new { success = false, message = "Ya existen 2 áreas institucionales con slide global. No se pueden crear más." });
+
             _context.Areas.Add(model);
             await _context.SaveChangesAsync();
 
@@ -143,7 +150,19 @@ namespace RHAds.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            return Ok(new { success = true, message = "Área creada correctamente." });
+            return Ok(new
+            {
+                success = true,
+                message = "Área creada correctamente.",
+                data = new
+                {
+                    areaId = model.AreaId,
+                    nombre = model.Nombre,
+                    descripcion = model.Descripcion,
+                    activo = model.Activo,
+                    esInstitucional = model.EsInstitucional
+                }
+            });
         }
 
         // Editar área
@@ -156,6 +175,13 @@ namespace RHAds.Controllers
 
             if (area == null)
                 return BadRequest(new { success = false, message = "Área no encontrada." });
+
+            // ✅ Contar cuántos slides globales existen en total
+            int totalGlobales = await _context.Slides.CountAsync(s => s.EsGlobal);
+
+            // ✅ Si se intenta marcar como institucional y ya hay 2 globales → bloquear
+            if (req.EsInstitucional && !area.EsInstitucional && totalGlobales >= 2)
+                return BadRequest(new { success = false, message = "Ya existen 2 áreas institucionales con slide global. No se pueden crear más." });
 
             area.Nombre = req.Nombre;
             area.Descripcion = req.Descripcion;
@@ -204,11 +230,9 @@ namespace RHAds.Controllers
 
                 foreach (var slide in globalSlides)
                 {
-                    // Eliminar layouts asociados
                     var layouts = _context.SlideLayouts.Where(l => l.SlideId == slide.SlideId);
                     _context.SlideLayouts.RemoveRange(layouts);
 
-                    // Eliminar slide
                     _context.Slides.Remove(slide);
                 }
 
@@ -350,7 +374,7 @@ namespace RHAds.Controllers
                 .Where(a => a.EsInstitucional == true)
                 .ToListAsync();
 
-            return PartialView(); // 👈 ya no pasamos un modelo fuerte, solo ViewBag
+            return PartialView();
         }
 
         //FETCH CREAR SLIDE
@@ -445,11 +469,13 @@ namespace RHAds.Controllers
             });
         }
 
-        //FETCH EDITAR SLIDE
         [HttpPost]
         public async Task<IActionResult> EditSlide([FromBody] EditSlideDto model)
         {
-            var slide = await _context.Slides.FirstOrDefaultAsync(x => x.SlideId == model.SlideId);
+            var slide = await _context.Slides
+                .Include(s => s.Area)
+                .FirstOrDefaultAsync(x => x.SlideId == model.SlideId);
+
             if (slide == null)
                 return BadRequest(new { success = false, message = "Slide no encontrado." });
 
@@ -467,6 +493,17 @@ namespace RHAds.Controllers
                     return BadRequest(new { success = false, message = "Ya existe un slide institucional en esta área." });
             }
 
+            // ✅ Nueva validación: si el área es institucional, debe existir al menos un slide global
+            if (!model.EsGlobal && slide.Area.EsInstitucional)
+            {
+                bool esElUnicoGlobal = !await _context.Slides
+                    .AnyAsync(s => s.AreaId == slide.AreaId && s.EsGlobal && s.SlideId != slide.SlideId);
+
+                if (esElUnicoGlobal)
+                    return BadRequest(new { success = false, message = "El área es institucional, debe existir al menos un slide global." });
+            }
+
+            // ✅ Actualizar datos
             slide.EsGlobal = model.EsGlobal;
             slide.Titulo = model.Titulo;
             slide.Orden = model.Orden;

@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RHAds.Data;
+using RHAds.Models.Areas;
 using RHAds.Models.Safety;
+using RHAds.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using RHAds.Models.Areas;
 
 namespace RHAds.Controllers
 {
@@ -28,9 +29,16 @@ namespace RHAds.Controllers
 
             var colores = ObtenerColoresDelMes(year, month);
 
-            return View(colores);
-        }
+            var model = new SafetyBoardViewModel
+            {
+                Colores = colores,
+                DiasDesdeIncidente = DiasDesdeUltimoEvento(TipoEvento.Incidente),
+                DiasDesdeAccidente = DiasDesdeUltimoEvento(TipoEvento.Accidente),
+                DiasDesdeNearMiss = DiasDesdeUltimoEvento(TipoEvento.NearMiss)
+            };
 
+            return View(model);
+        }
         public IActionResult SafetyBoardPartial()
         {
             int year = DateTime.Now.Year;
@@ -52,6 +60,17 @@ namespace RHAds.Controllers
                 .ToList();
 
             return View(eventos);
+        }
+
+        private int DiasDesdeUltimoEvento(TipoEvento tipo)
+        {
+            var ultimo = _context.SafetyEvents
+                .Where(e => e.Tipo == tipo)
+                .OrderByDescending(e => e.Fecha)
+                .Select(e => e.Fecha)
+                .FirstOrDefault();
+
+            return ultimo == default ? 0 : (DateTime.Today - ultimo).Days;
         }
 
         // Modal para crear evento
