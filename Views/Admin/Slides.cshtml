@@ -100,33 +100,37 @@
                     { data: 'titulo', className: 'titulo-cell' },
                     { data: 'orden', className: 'orden-cell' },
                     { data: 'activo', render: d => `
-                        <div class="form-check form-switch activo-cell">
+                        <div class="form-check form-switch activo-cell justify-content-center d-flex">
                             <input class="form-check-input toggle-activo" type="checkbox" ${d ? "checked" : ""}/>
                         </div>` },
                     { data: 'colorCabecera', render: d => `
-                        <div class="color-cell">
+                        <div class="color-cell justify-content-center d-flex">
                             <input type="color" class="form-control form-control-color color-picker" value="${d}" />
                         </div>` },
                     { data: 'esGlobal', render: d => `<span class="esglobal-cell">${d ? "Sí" : "No"}</span>` },
-
-                            {
-            data: 'areaDestinoId',
-            className: 'areadestino-cell',
-            render: (id, type, row) => {
-                if (id && id !== 0) {
-                    return `<span data-area-id="${id}">${row.areaDestinoNombre}</span>`;
-                }
-                return `<span data-area-id="">-</span>`;
-            }
-        },
-
-                    { data: 'slideId', render: id => `
-                        <button class="btn btn-warning btn-sm rounded-pill open-edit-slide" data-slide-id="${id}">
+                    { data: 'areaDestinoId', className: 'areadestino-cell', render: (id, type, row) => {
+                        if (id && id !== 0) {
+                            return `<span data-area-id="${id}">${row.areaDestinoNombre}</span>`;
+                        }
+                        return `<span data-area-id="">-</span>`;}
+                    },
+                    { data: 'slideId', render: (id, type, row) => `
+                        <a href="/Admin/Images?slideId=${id}"
+                            class="btn btn-primary btn-sm rounded-pill"
+                            title="Ver Imágenes">
+                            <i class="bi bi-card-image"></i>
+                        </a>
+                        <button class="btn btn-warning btn-sm rounded-pill open-edit-slide"
+                                data-slide-id="${id}"
+                                title="Editar Slide">
                             <i class="bi bi-pencil-square"></i>
                         </button>
-                        <button class="btn btn-danger btn-sm rounded-pill" onclick="openDeleteSlide(${id}, 'Slide')">
+                        <button class="btn btn-danger btn-sm rounded-pill"
+                                onclick="openDeleteSlide(${id}, '${row.titulo}')"
+                                title="Eliminar Slide">
                             <i class="bi bi-trash"></i>
-                        </button>` }
+                        </button>`
+                     }
                 ]
             });
         });

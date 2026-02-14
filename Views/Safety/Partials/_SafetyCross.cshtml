@@ -1,0 +1,52 @@
+﻿@model Dictionary<int, string>
+
+<div class="d-flex flex-column align-items-center gap-2 safety-cross small">
+    <!-- Fila 1 -->
+    <div class="d-flex justify-content-center gap-2">
+        <div class="day @Model[1]">1</div>
+        <div class="day @Model[2]">2</div>
+        <div class="day @Model[3]">3</div>
+    </div>
+
+    <!-- Fila 2 -->
+    <div class="d-flex justify-content-center gap-2">
+        <div class="day @Model[4]">4</div>
+        <div class="day @Model[5]">5</div>
+        <div class="day @Model[6]">6</div>
+    </div>
+
+    <!-- Fila 3 -->
+    <div class="d-flex justify-content-center gap-2 flex-wrap">
+        @for (int d = 7; d <= 15; d++)
+        {
+            <div class="day @Model[d]">@d</div>
+        }
+    </div>
+
+    <!-- Fila 4 -->
+    <div class="d-flex justify-content-center gap-2 flex-wrap">
+        @for (int d = 16; d <= 24; d++)
+        {
+            <div class="day @Model[d]">@d</div>
+        }
+    </div>
+
+    <!-- Fila 5 -->
+    <div class="d-flex justify-content-center gap-2">
+        <div class="day @Model[25]">25</div>
+        <div class="day @Model[26]">26</div>
+        <div class="day @Model[27]">27</div>
+    </div>
+
+    <!-- Fila 6 -->
+    <div class="d-flex justify-content-center gap-2">
+        <div class="day @Model[28]">28</div>
+        <div class="day @Model[29]">29</div>
+        <div class="day @Model[30]">30</div>
+    </div>
+
+    <!-- Día 31 -->
+    <div class="d-flex justify-content-center">
+        <div class="day day-wide @Model[31]">31</div>
+    </div>
+</div>

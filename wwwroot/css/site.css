@@ -1,4 +1,4 @@
-html {
+﻿html {
   font-size: 14px;
 }
 
@@ -28,4 +28,60 @@ body {
 
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
+}
+.day {
+    width: 60px;
+    height: 60px;
+    border: 1px solid #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.day-wide {
+    width: calc(60px * 3 + 12px); /* 3 días + 2 gaps de 6px */
+    height: 60px;
+}
+
+.green {
+    background-color: #28a745 !important;
+    color: white;
+}
+
+.yellow {
+    background-color: #ffc107 !important;
+    color: black;
+}
+
+.red {
+    background-color: #dc3545 !important;
+    color: white;
+}
+
+.blue {
+    background-color: #007bff !important;
+    color: white;
+}
+.safety-cross.small .day {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #000; /* borde negro más visible */
+    border-radius: 0.25rem;
+    margin: 2px;
+    color: white;
+}
+.safety-cross.small .day-wide {
+    width: calc(2rem * 3 + 12px); /* ancho de 3 días + gaps */
+}
+
+/* Ajuste de contraste para amarillo */
+.safety-cross.small .day.bg-warning {
+    color: #212529; /* texto oscuro */
 }

@@ -57,11 +57,19 @@
         </nav>
     </header>
 
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+    <!-- Aquí cambiamos el container fijo por una sección -->
+    @RenderSection("MainContainer", required: false)
+        
+    <!-- Fallback: si la vista no define sección, usamos container normal -->
+    @if (!IsSectionDefined("MainContainer"))
+    {
+        <div class="container">
+            <main role="main" class="pb-3">
+                @RenderBody()
+            </main>
+        </div>
+    }
+
 
     <!-- TOAST GLOBAL -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3">
@@ -78,9 +86,11 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2025 - Comunication Board
+            &copy; TGRMX Iot Department 2026 - Comunication Board
         </div>
     </footer>
+
+
 
     <!-- Bootstrap Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

@@ -1,0 +1,182 @@
+﻿@{
+    Layout = "~/Views/Shared/_SafetyBoardLayout.cshtml";
+}
+@model RHAds.ViewModels.SafetyBoardViewModel
+
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-end mb-3">
+        <a asp-controller="Safety" asp-action="SafetyBoard"
+           class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrows-fullscreen"></i> Regresar
+        </a>
+    </div>
+
+    <main role="main" class="pb-3">
+
+        <!-- Contadores en cards -->
+        <div class="row mb-4 justify-content-center">
+
+            <!-- Near Miss -->
+            <div class="col-md-3">
+                <div class="card text-center border-primary">
+                    <div class="card-header bg-primary text-white fw-bold fs-5">Near Miss</div>
+                    <div class="card-body">
+                        <h3 class="card-title display-6  fw-bold ">@Model.DiasDesdeNearMiss</h3>
+                        <p class="card-text">Días desde el último near miss</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Incidente -->
+            <div class="col-md-3">
+                <div class="card text-center border-warning">
+                    <div class="card-header bg-warning text-dark fw-bold fs-5">Incidente</div>
+                    <div class="card-body">
+                        <h3 class="card-title display-6 fw-bold ">@Model.DiasDesdeIncidente</h3>
+                        <p class="card-text">Días desde el último incidente</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accidente -->
+            <div class="col-md-3">
+                <div class="card text-center border-danger">
+                    <div class="card-header bg-danger text-white fw-bold fs-5">Accidente</div>
+                    <div class="card-body">
+                        <h3 class="card-title display-6  fw-bold">@Model.DiasDesdeAccidente</h3>
+                        <p class="card-text">Días desde el último accidente</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Safety Cross compacta -->
+        <div class="d-flex flex-column align-items-center gap-2 mt-4">
+            <!-- Fila 1 -->
+            <div class="d-flex justify-content-center gap-2">
+                <div class="day @Model.Colores[1]">1</div>
+                <div class="day @Model.Colores[2]">2</div>
+                <div class="day @Model.Colores[3]">3</div>
+            </div>
+
+            <!-- Fila 2 -->
+            <div class="d-flex justify-content-center gap-2">
+                <div class="day @Model.Colores[4]">4</div>
+                <div class="day @Model.Colores[5]">5</div>
+                <div class="day @Model.Colores[6]">6</div>
+            </div>
+
+            <!-- Fila 3 -->
+            <div class="d-flex justify-content-center gap-2 flex-wrap">
+                @for (int d = 7; d <= 15; d++)
+                {
+                    <div class="day @Model.Colores[d]">@d</div>
+                }
+            </div>
+
+            <!-- Fila 4 -->
+            <div class="d-flex justify-content-center gap-2 flex-wrap">
+                @for (int d = 16; d <= 24; d++)
+                {
+                    <div class="day @Model.Colores[d]">@d</div>
+                }
+            </div>
+
+            <!-- Fila 5 -->
+            <div class="d-flex justify-content-center gap-2">
+                <div class="day @Model.Colores[25]">25</div>
+                <div class="day @Model.Colores[26]">26</div>
+                <div class="day @Model.Colores[27]">27</div>
+            </div>
+
+            <!-- Fila 6 -->
+            <div class="d-flex justify-content-center gap-2">
+                <div class="day @Model.Colores[28]">28</div>
+                <div class="day @Model.Colores[29]">29</div>
+                <div class="day @Model.Colores[30]">30</div>
+            </div>
+
+            <!-- Día 31 -->
+            <!-- Día 31 -->
+            <div class="d-flex justify-content-center">
+                <div class="day day-wide @Model.Colores[31]">31</div>
+            </div>
+        </div>
+
+        <!-- Últimos eventos debajo de la cruz -->
+        <div class="row mt-4 text-center">
+            <!-- Último Near Miss -->
+            <div class="col-md-4 col-12 mb-3">
+                @if (Model.UltimoNearMiss != null)
+                {
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <span class="fw-bold fs-5">Último Near Miss</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="row fw-bold mb-2 ">
+                                <div class="col">Fecha</div>
+                                <div class="col">Área</div>
+                                <div class="col">Descripción</div>
+                            </div>
+                            <div class="row">
+                                <div class="col">@Model.UltimoNearMiss.Fecha.ToShortDateString()</div>
+                                <div class="col">@Model.UltimoNearMiss.Area.Nombre</div>
+                                <div class="col">@Model.UltimoNearMiss.Descripcion</div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Último Incidente -->
+            <div class="col-md-4 col-12 mb-3">
+                @if (Model.UltimoIncidente != null)
+                {
+                    <div class="card border-warning">
+                        <div class="card-header bg-warning text-dark">
+                            <span class="fw-bold fs-5">Último Incidente</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="row fw-bold mb-2">
+                                <div class="col">Fecha</div>
+                                <div class="col">Área</div>
+                                <div class="col">Descripción</div>
+                            </div>
+                            <div class="row">
+                                <div class="col">@Model.UltimoIncidente.Fecha.ToShortDateString()</div>
+                                <div class="col">@Model.UltimoIncidente.Area.Nombre</div>
+                                <div class="col">@Model.UltimoIncidente.Descripcion</div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Último Accidente -->
+            <div class="col-md-4 col-12 mb-3">
+                @if (Model.UltimoAccidente != null)
+                {
+                    <div class="card border-danger">
+                        <div class="card-header bg-danger text-white">
+                            <span class="fw-bold fs-5">Último Accidente</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="row fw-bold mb-2">
+                                <div class="col">Fecha</div>
+                                <div class="col">Área</div>
+                                <div class="col">Descripción</div>
+                            </div>
+                            <div class="row">
+                                <div class="col">@Model.UltimoAccidente.Fecha.ToShortDateString()</div>
+                                <div class="col">@Model.UltimoAccidente.Area.Nombre</div>
+                                <div class="col">@Model.UltimoAccidente.Descripcion</div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </main>
+</div>

@@ -5,6 +5,7 @@ using RHAds.Data;
 using RHAds.DTOs.Slides;
 using RHAds.Helpers;
 using RHAds.Models.Areas;
+using RHAds.Services;
 using RHAds.ViewModels;
 
 
@@ -13,12 +14,14 @@ namespace RHAds.Controllers
     [Authorize]
     public class AdminController : Controller
     {
+        private readonly SafetyService _safetyService;
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _env;
 
 
     public AdminController(AppDbContext context, IWebHostEnvironment env)
     {
+        _safetyService = new SafetyService(context);
         _context = context;
         _env = env;
     }
@@ -704,17 +707,24 @@ namespace RHAds.Controllers
             if (area == null)
                 return NotFound();
 
-            // Cargar slides globales (RH y EHS)
             var slidesGlobales = _context.Slides
                 .Where(s => s.EsGlobal)
                 .Include(s => s.SlideImages)
                 .ToList();
 
-            // Enviar a la vista
             ViewBag.SlidesGlobales = slidesGlobales;
 
-            return View(area);
+            var colores = _safetyService.ObtenerColoresDelMes(DateTime.Now.Year, DateTime.Now.Month);
+
+            var model = new FullscreenViewModel
+            {
+                Area = area,
+                Colores = colores
+            };
+
+            return View(model);
         }
+
 
         [HttpGet]
         public IActionResult EditorLayout(int areaId)

@@ -22,23 +22,52 @@ namespace RHAds.Controllers
         // ================================
         //  SAFETY BOARD (solo visualización)
         // ================================
+        private SafetyEvent? ObtenerUltimoEvento(TipoEvento tipo)
+        {
+            return _context.SafetyEvents
+                .Include(e => e.Area) // <-- importante
+                .Where(e => e.Tipo == tipo)
+                .OrderByDescending(e => e.Fecha)
+                .FirstOrDefault();
+        }
+
         public IActionResult SafetyBoard()
         {
-            int year = DateTime.Now.Year;
-            int month = DateTime.Now.Month;
-
-            var colores = ObtenerColoresDelMes(year, month);
+            var colores = ObtenerColoresDelMes(DateTime.Now.Year, DateTime.Now.Month);
 
             var model = new SafetyBoardViewModel
             {
                 Colores = colores,
                 DiasDesdeIncidente = DiasDesdeUltimoEvento(TipoEvento.Incidente),
                 DiasDesdeAccidente = DiasDesdeUltimoEvento(TipoEvento.Accidente),
-                DiasDesdeNearMiss = DiasDesdeUltimoEvento(TipoEvento.NearMiss)
+                DiasDesdeNearMiss = DiasDesdeUltimoEvento(TipoEvento.NearMiss),
+                UltimoIncidente = ObtenerUltimoEvento(TipoEvento.Incidente),
+                UltimoAccidente = ObtenerUltimoEvento(TipoEvento.Accidente),
+                UltimoNearMiss = ObtenerUltimoEvento(TipoEvento.NearMiss)
             };
 
             return View(model);
         }
+
+        public IActionResult SafetyBoardFull()
+        {
+            var colores = ObtenerColoresDelMes(DateTime.Now.Year, DateTime.Now.Month);
+
+            var model = new SafetyBoardViewModel
+            {
+                Colores = colores,
+                DiasDesdeIncidente = DiasDesdeUltimoEvento(TipoEvento.Incidente),
+                DiasDesdeAccidente = DiasDesdeUltimoEvento(TipoEvento.Accidente),
+                DiasDesdeNearMiss = DiasDesdeUltimoEvento(TipoEvento.NearMiss),
+                UltimoIncidente = ObtenerUltimoEvento(TipoEvento.Incidente),
+                UltimoAccidente = ObtenerUltimoEvento(TipoEvento.Accidente),
+                UltimoNearMiss = ObtenerUltimoEvento(TipoEvento.NearMiss)
+            };
+
+            // Renderiza la vista con el layout especial
+            return View("SafetyBoardFull", model);
+        }
+
         public IActionResult SafetyBoardPartial()
         {
             int year = DateTime.Now.Year;
@@ -72,7 +101,7 @@ namespace RHAds.Controllers
 
             return ultimo == default ? 0 : (DateTime.Today - ultimo).Days;
         }
-
+            
         // Modal para crear evento
         public IActionResult CrearEventoModal()
         {
@@ -162,24 +191,34 @@ namespace RHAds.Controllers
 
             var colores = new Dictionary<int, string>();
             int hoy = DateTime.Now.Day;
+            int diasEnMes = DateTime.DaysInMonth(year, month); // número real de días
 
             for (int dia = 1; dia <= 31; dia++)
             {
-                var evento = eventos.FirstOrDefault(e => e.Fecha.Day == dia);
-
-                if (evento != null)
+                if (dia <= diasEnMes)
                 {
-                    colores[dia] = evento.Tipo switch
+                    var evento = eventos.FirstOrDefault(e => e.Fecha.Day == dia);
+
+                    if (evento != null)
                     {
-                        TipoEvento.Accidente => "red",
-                        TipoEvento.Incidente => "yellow",
-                        TipoEvento.NearMiss => "blue",
-                        _ => ""
-                    };
+                        colores[dia] = evento.Tipo switch
+                        {
+                            TipoEvento.Accidente => "red",
+                            TipoEvento.Incidente => "yellow",
+                            TipoEvento.NearMiss => "blue",
+                            _ => ""
+                        };
+                    }
+                    else
+                    {
+                        // Día válido pero sin evento → verde si ya pasó
+                        colores[dia] = dia < hoy ? "green" : "";
+                    }
                 }
                 else
                 {
-                    colores[dia] = dia < hoy ? "green" : "";
+                    // Día inexistente en el mes → color neutro
+                    colores[dia] = "gray";
                 }
             }
 

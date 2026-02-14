@@ -43,7 +43,7 @@
                     { data: 'nombre', className: 'text-center' },
                     { data: 'descripcion', className: 'text-center' },
                     { data: 'activo', className: 'text-center', render: (d, type, row) => `
-                        <div class="form-check form-switch">
+                        <div class="d-flex justify-content-center form-check form-switch">
                             <input class="form-check-input" type="checkbox" ${d ? "checked" : ""}
                                    onchange="toggleActivoArea(${row.areaId}, this.checked)">
                         </div>` },
